@@ -12,7 +12,8 @@ class MelodicDictation {
         this.currentQuestion = 0;
         this.correctAnswers = 0;
         this.isPlaying = false;
-        
+        this.playbackSpeed = 1.0;
+
         // Note frequencies (C4 = middle C)
         this.baseFrequencies = {
             'C': 261.63,
@@ -29,23 +30,23 @@ class MelodicDictation {
             'B': 493.88
         };
         
-        // Major scale intervals (in semitones from root)
-        this.majorScaleIntervals = [0, 2, 4, 5, 7, 9, 11];
-        
-        // Note names for each key (accounting for key signature)
+        // Chromatic scale intervals (all 12 semitones from root)
+        this.chromaticIntervals = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+
+        // Note names for each key (all 12 chromatic notes with enharmonic spellings)
         this.keySignatures = {
-            'C': ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
-            'Db': ['Db', 'Eb', 'F', 'Gb', 'Ab', 'Bb', 'C'],
-            'D': ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
-            'Eb': ['Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'],
-            'E': ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'],
-            'F': ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
-            'Gb': ['Gb', 'Ab', 'Bb', 'Cb', 'Db', 'Eb', 'F'],
-            'G': ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
-            'Ab': ['Ab', 'Bb', 'C', 'Db', 'Eb', 'F', 'G'],
-            'A': ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
-            'Bb': ['Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'],
-            'B': ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#']
+            'C': ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'],
+            'Db': ['Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B', 'C'],
+            'D': ['D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'C', 'C#'],
+            'Eb': ['Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B', 'C', 'Db', 'D'],
+            'E': ['E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#'],
+            'F': ['F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E'],
+            'Gb': ['Gb', 'G', 'Ab', 'A', 'Bb', 'Cb', 'C', 'Db', 'D', 'Eb', 'E', 'F'],
+            'G': ['G', 'G#', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#'],
+            'Ab': ['Ab', 'A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G'],
+            'A': ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'],
+            'Bb': ['Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A'],
+            'B': ['B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#']
         };
         
         this.init();
@@ -58,7 +59,15 @@ class MelodicDictation {
                 this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             }
         }, { once: true });
-        
+
+        // Load saved speed from localStorage
+        const savedSpeed = localStorage.getItem('playbackSpeed');
+        if (savedSpeed) {
+            this.playbackSpeed = parseFloat(savedSpeed);
+            document.getElementById('speedSlider').value = this.playbackSpeed;
+            document.getElementById('speedValue').textContent = this.playbackSpeed.toFixed(1) + 'x';
+        }
+
         this.setupEventListeners();
     }
     
@@ -74,7 +83,12 @@ class MelodicDictation {
         document.getElementById('numQuestions').addEventListener('change', (e) => {
             this.numQuestions = parseInt(e.target.value);
         });
-        
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            this.playbackSpeed = parseFloat(e.target.value);
+            document.getElementById('speedValue').textContent = this.playbackSpeed.toFixed(1) + 'x';
+            localStorage.setItem('playbackSpeed', this.playbackSpeed);
+        });
+
         // Exercise controls
         document.getElementById('playChordBtn').addEventListener('click', () => this.playChordProgression());
         document.getElementById('playMelodyBtn').addEventListener('click', () => this.playMelody());
@@ -120,8 +134,8 @@ class MelodicDictation {
     generateMelody() {
         this.currentMelody = [];
         for (let i = 0; i < this.melodyLength; i++) {
-            // Generate scale degrees 1-7
-            const degree = Math.floor(Math.random() * 7) + 1;
+            // Generate chromatic scale degrees 1-12
+            const degree = Math.floor(Math.random() * 12) + 1;
             this.currentMelody.push(degree);
         }
     }
@@ -143,10 +157,10 @@ class MelodicDictation {
     setupScaleDegreeButtons() {
         const container = document.getElementById('scaleDegrees');
         container.innerHTML = '';
-        
+
         const noteNames = this.keySignatures[this.currentKey];
-        
-        for (let i = 1; i <= 7; i++) {
+
+        for (let i = 1; i <= 12; i++) {
             const btn = document.createElement('button');
             btn.className = 'degree-btn';
             btn.innerHTML = `
@@ -167,9 +181,9 @@ class MelodicDictation {
             if (this.userAnswer.length === this.melodyLength) {
                 document.getElementById('submitBtn').disabled = false;
             }
-            
-            // Play note feedback
-            this.playNote(degree, 0.3);
+
+            // Play note feedback (apply speed)
+            this.playNote(degree, 0.3 / this.playbackSpeed);
         }
     }
     
@@ -282,7 +296,7 @@ class MelodicDictation {
     
     getFrequency(scaleDegree, octaveOffset = 0) {
         const rootFreq = this.baseFrequencies[this.currentKey];
-        const semitones = this.majorScaleIntervals[scaleDegree - 1];
+        const semitones = this.chromaticIntervals[scaleDegree - 1];
         return rootFreq * Math.pow(2, (semitones + octaveOffset * 12) / 12);
     }
     
@@ -330,9 +344,9 @@ class MelodicDictation {
         }
         
         const now = this.audioContext.currentTime;
-        const chordDuration = 0.8;
-        const gap = 0.1;
-        
+        const chordDuration = 0.8 / this.playbackSpeed;
+        const gap = 0.1 / this.playbackSpeed;
+
         // I - IV - V - I progression
         await this.playChord([1, 3, 5], chordDuration, now);
         await this.playChord([4, 6, 1], chordDuration, now + chordDuration + gap);
@@ -353,9 +367,9 @@ class MelodicDictation {
         }
         
         const now = this.audioContext.currentTime;
-        const noteDuration = 0.5;
-        const gap = 0.1;
-        
+        const noteDuration = 0.5 / this.playbackSpeed;
+        const gap = 0.1 / this.playbackSpeed;
+
         this.currentMelody.forEach((degree, index) => {
             const startTime = now + index * (noteDuration + gap);
             this.playNote(degree, noteDuration, startTime);
