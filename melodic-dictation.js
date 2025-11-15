@@ -302,25 +302,26 @@ class MelodicDictation {
     
     async playNote(scaleDegree, duration = 0.5, startTime = null) {
         if (!this.audioContext) return;
-        
+
         const now = startTime || this.audioContext.currentTime;
         const freq = this.getFrequency(scaleDegree);
-        
+
         // Create oscillator
         const osc = this.audioContext.createOscillator();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(freq, now);
-        
-        // Create gain for envelope
+
+        // Create gain for envelope (scale attack time with playback speed)
         const gainNode = this.audioContext.createGain();
+        const attackTime = 0.01 / this.playbackSpeed;
         gainNode.gain.setValueAtTime(0, now);
-        gainNode.gain.linearRampToValueAtTime(0.3, now + 0.01);
+        gainNode.gain.linearRampToValueAtTime(0.3, now + attackTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
-        
+
         // Connect and play
         osc.connect(gainNode);
         gainNode.connect(this.audioContext.destination);
-        
+
         osc.start(now);
         osc.stop(now + duration);
     }
