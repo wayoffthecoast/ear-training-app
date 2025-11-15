@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Melodic Dictation Ear Training</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .settings {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .setting-group {
+            margin-bottom: 20px;
+        }
+
+        .setting-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .exercise-area {
+            display: none;
+        }
+
+        .exercise-area.active {
+            display: block;
+        }
+
+        .progress {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-info {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .progress-info strong {
+            color: #333;
+        }
+
+        .score {
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .controls button {
+            flex: 1;
+        }
+
+        .answer-area {
+            margin-bottom: 30px;
+        }
+
+        .answer-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .answer-slots {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .answer-slot {
+            width: 80px;
+            height: 80px;
+            border: 3px solid #ddd;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 600;
+            background: white;
+            transition: all 0.3s;
+        }
+
+        .answer-slot.filled {
+            background: #e3f2fd;
+            border-color: #667eea;
+        }
+
+        .answer-slot.correct {
+            background: #c8e6c9;
+            border-color: #4caf50;
+            animation: correctPulse 0.5s;
+        }
+
+        .answer-slot.incorrect {
+            background: #ffcdd2;
+            border-color: #f44336;
+            animation: incorrectShake 0.5s;
+        }
+
+        .answer-slot .note-name {
+            font-size: 24px;
+            line-height: 1;
+        }
+
+        .answer-slot .scale-degree {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .answer-slot.incorrect .correct-answer {
+            font-size: 12px;
+            color: #4caf50;
+            margin-top: 4px;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes incorrectShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .scale-degrees {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .degree-btn {
+            padding: 20px 10px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .degree-btn .note-name {
+            font-size: 20px;
+            color: #333;
+        }
+
+        .degree-btn .degree-number {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .degree-btn:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+            border-color: #667eea;
+        }
+
+        .degree-btn:active {
+            transform: translateY(0);
+            background: #e3f2fd;
+        }
+
+        .degree-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .submit-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        .submit-area button {
+            flex: 1;
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+        }
+
+        .feedback.correct {
+            background: #c8e6c9;
+            color: #2e7d32;
+            display: block;
+        }
+
+        .feedback.incorrect {
+            background: #ffcdd2;
+            color: #c62828;
+            display: block;
+        }
+
+        .results {
+            display: none;
+            text-align: center;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .results h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .final-score {
+            font-size: 48px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .percentage {
+            font-size: 24px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 600px) {
+            .scale-degrees {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .answer-slot {
+                width: 60px;
+                height: 60px;
+                font-size: 16px;
+            }
+
+            .degree-btn {
+                padding: 15px 5px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Melodic Dictation</h1>
+        <p class="subtitle">
+            Train your ear to recognize melodies by scale degree.<br>
+            Listen to the chord progression to establish the key, then identify the notes in the melody.
+        </p>
+
+        <!-- Settings Panel -->
+        <div id="settingsPanel" class="settings">
+            <div class="setting-group">
+                <label for="keySelect">Key:</label>
+                <select id="keySelect">
+                    <option value="C">C Major</option>
+                    <option value="Db">Db Major</option>
+                    <option value="D">D Major</option>
+                    <option value="Eb">Eb Major</option>
+                    <option value="E">E Major</option>
+                    <option value="F">F Major</option>
+                    <option value="Gb">Gb Major</option>
+                    <option value="G">G Major</option>
+                    <option value="Ab">Ab Major</option>
+                    <option value="A">A Major</option>
+                    <option value="Bb" selected>Bb Major</option>
+                    <option value="B">B Major</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label for="melodyLength">Melody Length:</label>
+                <select id="melodyLength">
+                    <option value="3">3 notes</option>
+                    <option value="4" selected>4 notes</option>
+                    <option value="5">5 notes</option>
+                    <option value="6">6 notes</option>
+                    <option value="7">7 notes</option>
+                    <option value="8">8 notes</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label for="numQuestions">Number of Questions:</label>
+                <select id="numQuestions">
+                    <option value="5">5 questions</option>
+                    <option value="10" selected>10 questions</option>
+                    <option value="15">15 questions</option>
+                    <option value="20">20 questions</option>
+                </select>
+            </div>
+
+            <button id="startBtn" class="btn">Start Exercise</button>
+        </div>
+
+        <!-- Exercise Area -->
+        <div id="exerciseArea" class="exercise-area">
+            <div class="progress">
+                <div class="progress-info">
+                    Question <strong id="currentQ">1</strong> of <strong id="totalQ">10</strong>
+                </div>
+                <div class="score">
+                    Score: <span id="score">0</span>/<span id="totalScore">0</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="playChordBtn" class="btn">🎹 Play Chord Progression</button>
+                <button id="playMelodyBtn" class="btn">🎵 Play Melody</button>
+            </div>
+
+            <div class="answer-area">
+                <div class="answer-label">Your Answer:</div>
+                <div id="answerSlots" class="answer-slots"></div>
+
+                <div class="scale-degrees" id="scaleDegrees"></div>
+
+                <div class="submit-area">
+                    <button id="clearBtn" class="btn" style="background: #f44336;">Clear</button>
+                    <button id="submitBtn" class="btn" disabled>Submit Answer</button>
+                </div>
+            </div>
+
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="resultsArea" class="results">
+            <h2>Exercise Complete! 🎉</h2>
+            <div class="final-score" id="finalScore">0/10</div>
+            <div class="percentage" id="percentage">0%</div>
+            <button id="restartBtn" class="btn">Start New Exercise</button>
+        </div>
+    </div>
+
+    <script src="melodic-dictation.js"></script>
+</body>
+</html>

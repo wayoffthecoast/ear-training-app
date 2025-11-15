@@ -1,0 +1,371 @@
+// Melodic Dictation Ear Training App
+// Audio generation and game logic
+
+class MelodicDictation {
+    constructor() {
+        this.audioContext = null;
+        this.currentKey = 'Bb';
+        this.melodyLength = 4;
+        this.numQuestions = 10;
+        this.currentMelody = [];
+        this.userAnswer = [];
+        this.currentQuestion = 0;
+        this.correctAnswers = 0;
+        this.isPlaying = false;
+        
+        // Note frequencies (C4 = middle C)
+        this.baseFrequencies = {
+            'C': 261.63,
+            'Db': 277.18,
+            'D': 293.66,
+            'Eb': 311.13,
+            'E': 329.63,
+            'F': 349.23,
+            'Gb': 369.99,
+            'G': 392.00,
+            'Ab': 415.30,
+            'A': 440.00,
+            'Bb': 466.16,
+            'B': 493.88
+        };
+        
+        // Major scale intervals (in semitones from root)
+        this.majorScaleIntervals = [0, 2, 4, 5, 7, 9, 11];
+        
+        // Note names for each key (accounting for key signature)
+        this.keySignatures = {
+            'C': ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
+            'Db': ['Db', 'Eb', 'F', 'Gb', 'Ab', 'Bb', 'C'],
+            'D': ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
+            'Eb': ['Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'],
+            'E': ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'],
+            'F': ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
+            'Gb': ['Gb', 'Ab', 'Bb', 'Cb', 'Db', 'Eb', 'F'],
+            'G': ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
+            'Ab': ['Ab', 'Bb', 'C', 'Db', 'Eb', 'F', 'G'],
+            'A': ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
+            'Bb': ['Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'],
+            'B': ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#']
+        };
+        
+        this.init();
+    }
+    
+    init() {
+        // Initialize audio context on user interaction
+        document.addEventListener('click', () => {
+            if (!this.audioContext) {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }, { once: true });
+        
+        this.setupEventListeners();
+    }
+    
+    setupEventListeners() {
+        // Settings panel
+        document.getElementById('startBtn').addEventListener('click', () => this.startExercise());
+        document.getElementById('keySelect').addEventListener('change', (e) => {
+            this.currentKey = e.target.value;
+        });
+        document.getElementById('melodyLength').addEventListener('change', (e) => {
+            this.melodyLength = parseInt(e.target.value);
+        });
+        document.getElementById('numQuestions').addEventListener('change', (e) => {
+            this.numQuestions = parseInt(e.target.value);
+        });
+        
+        // Exercise controls
+        document.getElementById('playChordBtn').addEventListener('click', () => this.playChordProgression());
+        document.getElementById('playMelodyBtn').addEventListener('click', () => this.playMelody());
+        document.getElementById('submitBtn').addEventListener('click', () => this.submitAnswer());
+        document.getElementById('clearBtn').addEventListener('click', () => this.clearAnswer());
+        document.getElementById('restartBtn').addEventListener('click', () => this.restart());
+    }
+    
+    startExercise() {
+        this.currentQuestion = 0;
+        this.correctAnswers = 0;
+        document.getElementById('settingsPanel').style.display = 'none';
+        document.getElementById('exerciseArea').classList.add('active');
+        document.getElementById('resultsArea').classList.remove('active');
+        this.nextQuestion();
+    }
+    
+    nextQuestion() {
+        this.currentQuestion++;
+        this.userAnswer = [];
+        
+        // Update UI
+        document.getElementById('currentQ').textContent = this.currentQuestion;
+        document.getElementById('totalQ').textContent = this.numQuestions;
+        document.getElementById('score').textContent = this.correctAnswers;
+        document.getElementById('totalScore').textContent = this.currentQuestion - 1;
+        document.getElementById('feedback').style.display = 'none';
+        document.getElementById('feedback').className = 'feedback';
+        
+        // Generate new melody
+        this.generateMelody();
+        
+        // Setup answer slots
+        this.setupAnswerSlots();
+        
+        // Setup scale degree buttons
+        this.setupScaleDegreeButtons();
+        
+        // Automatically play chord progression
+        setTimeout(() => this.playChordProgression(), 500);
+    }
+    
+    generateMelody() {
+        this.currentMelody = [];
+        for (let i = 0; i < this.melodyLength; i++) {
+            // Generate scale degrees 1-7
+            const degree = Math.floor(Math.random() * 7) + 1;
+            this.currentMelody.push(degree);
+        }
+    }
+    
+    setupAnswerSlots() {
+        const slotsContainer = document.getElementById('answerSlots');
+        slotsContainer.innerHTML = '';
+        
+        for (let i = 0; i < this.melodyLength; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'answer-slot';
+            slot.id = `slot-${i}`;
+            slotsContainer.appendChild(slot);
+        }
+        
+        document.getElementById('submitBtn').disabled = true;
+    }
+    
+    setupScaleDegreeButtons() {
+        const container = document.getElementById('scaleDegrees');
+        container.innerHTML = '';
+        
+        const noteNames = this.keySignatures[this.currentKey];
+        
+        for (let i = 1; i <= 7; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'degree-btn';
+            btn.innerHTML = `
+                <span class="note-name">${noteNames[i-1]}</span>
+                <span class="degree-number">(${i})</span>
+            `;
+            btn.addEventListener('click', () => this.selectDegree(i));
+            container.appendChild(btn);
+        }
+    }
+    
+    selectDegree(degree) {
+        if (this.userAnswer.length < this.melodyLength) {
+            this.userAnswer.push(degree);
+            this.updateAnswerSlots();
+            
+            // Enable submit button when all slots filled
+            if (this.userAnswer.length === this.melodyLength) {
+                document.getElementById('submitBtn').disabled = false;
+            }
+            
+            // Play note feedback
+            this.playNote(degree, 0.3);
+        }
+    }
+    
+    updateAnswerSlots() {
+        const noteNames = this.keySignatures[this.currentKey];
+        
+        for (let i = 0; i < this.melodyLength; i++) {
+            const slot = document.getElementById(`slot-${i}`);
+            if (i < this.userAnswer.length) {
+                const degree = this.userAnswer[i];
+                slot.innerHTML = `
+                    <span class="note-name">${noteNames[degree-1]}</span>
+                    <span class="scale-degree">(${degree})</span>
+                `;
+                slot.classList.add('filled');
+            } else {
+                slot.innerHTML = '';
+                slot.className = 'answer-slot';
+            }
+        }
+    }
+    
+    clearAnswer() {
+        this.userAnswer = [];
+        this.updateAnswerSlots();
+        document.getElementById('submitBtn').disabled = true;
+        
+        // Remove feedback
+        document.getElementById('feedback').style.display = 'none';
+        
+        // Reset slot classes
+        for (let i = 0; i < this.melodyLength; i++) {
+            const slot = document.getElementById(`slot-${i}`);
+            slot.className = 'answer-slot';
+        }
+    }
+    
+    submitAnswer() {
+        // Check answer
+        const isCorrect = JSON.stringify(this.userAnswer) === JSON.stringify(this.currentMelody);
+        
+        const noteNames = this.keySignatures[this.currentKey];
+        const feedback = document.getElementById('feedback');
+        
+        if (isCorrect) {
+            this.correctAnswers++;
+            feedback.className = 'feedback correct';
+            feedback.textContent = '✓ Correct! Great job!';
+            
+            // Mark all slots as correct
+            for (let i = 0; i < this.melodyLength; i++) {
+                document.getElementById(`slot-${i}`).classList.add('correct');
+            }
+        } else {
+            feedback.className = 'feedback incorrect';
+            feedback.innerHTML = '✗ Incorrect. ';
+            
+            // Show correct vs incorrect answers
+            for (let i = 0; i < this.melodyLength; i++) {
+                const slot = document.getElementById(`slot-${i}`);
+                if (this.userAnswer[i] === this.currentMelody[i]) {
+                    slot.classList.add('correct');
+                } else {
+                    slot.classList.add('incorrect');
+                    const correctNote = noteNames[this.currentMelody[i]-1];
+                    slot.innerHTML += `<div class="correct-answer">✓ ${correctNote} (${this.currentMelody[i]})</div>`;
+                }
+            }
+            
+            feedback.innerHTML += `Correct answer: ${this.currentMelody.map((d, i) => 
+                `${noteNames[d-1]} (${d})`).join(', ')}`;
+        }
+        
+        // Update score
+        document.getElementById('score').textContent = this.correctAnswers;
+        document.getElementById('totalScore').textContent = this.currentQuestion;
+        
+        // Disable buttons temporarily
+        document.getElementById('submitBtn').disabled = true;
+        const degreeButtons = document.querySelectorAll('.degree-btn');
+        degreeButtons.forEach(btn => btn.disabled = true);
+        
+        // Move to next question or show results
+        if (this.currentQuestion < this.numQuestions) {
+            setTimeout(() => {
+                degreeButtons.forEach(btn => btn.disabled = false);
+                this.nextQuestion();
+            }, 3000);
+        } else {
+            setTimeout(() => this.showResults(), 2000);
+        }
+    }
+    
+    showResults() {
+        document.getElementById('exerciseArea').classList.remove('active');
+        document.getElementById('resultsArea').classList.add('active');
+        
+        const percentage = Math.round((this.correctAnswers / this.numQuestions) * 100);
+        document.getElementById('finalScore').textContent = `${this.correctAnswers}/${this.numQuestions}`;
+        document.getElementById('percentage').textContent = `${percentage}% Correct`;
+    }
+    
+    restart() {
+        document.getElementById('settingsPanel').style.display = 'block';
+        document.getElementById('exerciseArea').classList.remove('active');
+        document.getElementById('resultsArea').classList.remove('active');
+    }
+    
+    // Audio generation methods
+    
+    getFrequency(scaleDegree, octaveOffset = 0) {
+        const rootFreq = this.baseFrequencies[this.currentKey];
+        const semitones = this.majorScaleIntervals[scaleDegree - 1];
+        return rootFreq * Math.pow(2, (semitones + octaveOffset * 12) / 12);
+    }
+    
+    async playNote(scaleDegree, duration = 0.5, startTime = null) {
+        if (!this.audioContext) return;
+        
+        const now = startTime || this.audioContext.currentTime;
+        const freq = this.getFrequency(scaleDegree);
+        
+        // Create oscillator
+        const osc = this.audioContext.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        
+        // Create gain for envelope
+        const gainNode = this.audioContext.createGain();
+        gainNode.gain.setValueAtTime(0, now);
+        gainNode.gain.linearRampToValueAtTime(0.3, now + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
+        
+        // Connect and play
+        osc.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        
+        osc.start(now);
+        osc.stop(now + duration);
+    }
+    
+    async playChord(degrees, duration = 1.0, startTime = null) {
+        if (!this.audioContext) return;
+        
+        const now = startTime || this.audioContext.currentTime;
+        
+        degrees.forEach(degree => {
+            this.playNote(degree, duration, now);
+        });
+    }
+    
+    async playChordProgression() {
+        if (this.isPlaying) return;
+        this.isPlaying = true;
+        
+        if (!this.audioContext) {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        const now = this.audioContext.currentTime;
+        const chordDuration = 0.8;
+        const gap = 0.1;
+        
+        // I - IV - V - I progression
+        await this.playChord([1, 3, 5], chordDuration, now);
+        await this.playChord([4, 6, 1], chordDuration, now + chordDuration + gap);
+        await this.playChord([5, 7, 2], chordDuration, now + 2 * (chordDuration + gap));
+        await this.playChord([1, 3, 5], chordDuration, now + 3 * (chordDuration + gap));
+        
+        setTimeout(() => {
+            this.isPlaying = false;
+        }, 4 * (chordDuration + gap) * 1000);
+    }
+    
+    async playMelody() {
+        if (this.isPlaying) return;
+        this.isPlaying = true;
+        
+        if (!this.audioContext) {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        const now = this.audioContext.currentTime;
+        const noteDuration = 0.5;
+        const gap = 0.1;
+        
+        this.currentMelody.forEach((degree, index) => {
+            const startTime = now + index * (noteDuration + gap);
+            this.playNote(degree, noteDuration, startTime);
+        });
+        
+        setTimeout(() => {
+            this.isPlaying = false;
+        }, this.currentMelody.length * (noteDuration + gap) * 1000);
+    }
+}
+
+// Initialize the app
+const app = new MelodicDictation();
