@@ -182,8 +182,8 @@ class MelodicDictation {
                 document.getElementById('submitBtn').disabled = false;
             }
 
-            // Play note feedback (apply speed)
-            this.playNote(degree, 0.3 / this.playbackSpeed);
+            // Play note feedback
+            this.playNote(degree, 0.3);
         }
     }
     
@@ -306,24 +306,27 @@ class MelodicDictation {
         const now = startTime || this.audioContext.currentTime;
         const freq = this.getFrequency(scaleDegree);
 
+        // Apply playback speed to timing ONLY (not to frequency)
+        const actualDuration = duration / this.playbackSpeed;
+        const actualAttackTime = 0.01 / this.playbackSpeed;
+
         // Create oscillator
         const osc = this.audioContext.createOscillator();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, now);
+        osc.frequency.setValueAtTime(freq, now);  // Frequency never changes with speed
 
-        // Create gain for envelope (scale attack time with playback speed)
+        // Create gain for envelope
         const gainNode = this.audioContext.createGain();
-        const attackTime = 0.01 / this.playbackSpeed;
         gainNode.gain.setValueAtTime(0, now);
-        gainNode.gain.linearRampToValueAtTime(0.3, now + attackTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
+        gainNode.gain.linearRampToValueAtTime(0.3, now + actualAttackTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + actualDuration);
 
         // Connect and play
         osc.connect(gainNode);
         gainNode.connect(this.audioContext.destination);
 
         osc.start(now);
-        osc.stop(now + duration);
+        osc.stop(now + actualDuration);
     }
     
     async playChord(degrees, duration = 1.0, startTime = null) {
@@ -345,18 +348,19 @@ class MelodicDictation {
         }
         
         const now = this.audioContext.currentTime;
-        const chordDuration = 0.8 / this.playbackSpeed;
+        const chordDuration = 0.8;  // Base duration - playNote will scale it
+        const actualChordDuration = chordDuration / this.playbackSpeed;  // For timing calculations
         const gap = 0.1 / this.playbackSpeed;
 
         // I - IV - V - I progression
         await this.playChord([1, 3, 5], chordDuration, now);
-        await this.playChord([4, 6, 1], chordDuration, now + chordDuration + gap);
-        await this.playChord([5, 7, 2], chordDuration, now + 2 * (chordDuration + gap));
-        await this.playChord([1, 3, 5], chordDuration, now + 3 * (chordDuration + gap));
-        
+        await this.playChord([4, 6, 1], chordDuration, now + actualChordDuration + gap);
+        await this.playChord([5, 7, 2], chordDuration, now + 2 * (actualChordDuration + gap));
+        await this.playChord([1, 3, 5], chordDuration, now + 3 * (actualChordDuration + gap));
+
         setTimeout(() => {
             this.isPlaying = false;
-        }, 4 * (chordDuration + gap) * 1000);
+        }, 4 * (actualChordDuration + gap) * 1000);
     }
     
     async playMelody() {
@@ -368,17 +372,18 @@ class MelodicDictation {
         }
         
         const now = this.audioContext.currentTime;
-        const noteDuration = 0.5 / this.playbackSpeed;
+        const noteDuration = 0.5;  // Base duration - playNote will scale it
+        const actualNoteDuration = noteDuration / this.playbackSpeed;  // For timing calculations
         const gap = 0.1 / this.playbackSpeed;
 
         this.currentMelody.forEach((degree, index) => {
-            const startTime = now + index * (noteDuration + gap);
+            const startTime = now + index * (actualNoteDuration + gap);
             this.playNote(degree, noteDuration, startTime);
         });
-        
+
         setTimeout(() => {
             this.isPlaying = false;
-        }, this.currentMelody.length * (noteDuration + gap) * 1000);
+        }, this.currentMelody.length * (actualNoteDuration + gap) * 1000);
     }
 }
 
