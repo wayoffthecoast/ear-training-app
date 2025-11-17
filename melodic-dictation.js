@@ -7,6 +7,7 @@ class MelodicDictation {
         this.currentKey = 'Bb';
         this.melodyLength = 4;
         this.numQuestions = 10;
+        this.maxInterval = 12; // Default to 12 semitones (octave)
         this.currentMelody = [];
         this.userAnswer = [];
         this.currentQuestion = 0;
@@ -80,6 +81,9 @@ class MelodicDictation {
         document.getElementById('melodyLength').addEventListener('change', (e) => {
             this.melodyLength = parseInt(e.target.value);
         });
+        document.getElementById('maxInterval').addEventListener('change', (e) => {
+            this.maxInterval = e.target.value === 'unlimited' ? Infinity : parseInt(e.target.value);
+        });
         document.getElementById('numQuestions').addEventListener('change', (e) => {
             this.numQuestions = parseInt(e.target.value);
         });
@@ -133,10 +137,36 @@ class MelodicDictation {
     
     generateMelody() {
         this.currentMelody = [];
-        for (let i = 0; i < this.melodyLength; i++) {
-            // Generate chromatic scale degrees 1-12
-            const degree = Math.floor(Math.random() * 12) + 1;
-            this.currentMelody.push(degree);
+
+        // Generate first note randomly
+        let prevDegree = Math.floor(Math.random() * 12) + 1;
+        this.currentMelody.push(prevDegree);
+
+        // Generate subsequent notes within max interval constraint
+        for (let i = 1; i < this.melodyLength; i++) {
+            let validDegrees = [];
+
+            for (let degree = 1; degree <= 12; degree++) {
+                // Calculate smallest interval on chromatic circle
+                const diff = Math.abs(degree - prevDegree);
+                const interval = Math.min(diff, 12 - diff);
+
+                if (this.maxInterval === Infinity || interval <= this.maxInterval) {
+                    validDegrees.push(degree);
+                }
+            }
+
+            // Pick a random valid degree
+            if (validDegrees.length > 0) {
+                const nextDegree = validDegrees[Math.floor(Math.random() * validDegrees.length)];
+                this.currentMelody.push(nextDegree);
+                prevDegree = nextDegree;
+            } else {
+                // Fallback: if no valid degrees (shouldn't happen), use any degree
+                const nextDegree = Math.floor(Math.random() * 12) + 1;
+                this.currentMelody.push(nextDegree);
+                prevDegree = nextDegree;
+            }
         }
     }
     
