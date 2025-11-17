@@ -80,33 +80,37 @@ class MelodicDictation {
 
         // Key signature accidentals for display on treble clef
         // Format: { type: 'sharp' or 'flat', accidentals: [list of notes with their y-positions] }
-        // All y-positions constrained to be within staff bounds (y=40 top line to y=80 bottom line)
+        // Sharp keys follow the circle of fifths (F C G D A E B) with ascending/descending pattern
+        // Flat keys follow the circle of fourths (B E A D G C F) with ascending/descending pattern
+        // For sharps, G# can extend above the staff to y=35
         this.keySignatureAccidentals = {
             'C': { type: 'none', accidentals: [] },
-            'G': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }] },
-            'D': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }, { note: 'C', y: 55 }] },
-            'A': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }, { note: 'C', y: 55 }, { note: 'G', y: 70 }] },
-            'E': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }, { note: 'C', y: 55 }, { note: 'G', y: 70 }, { note: 'D', y: 50 }] },
-            'B': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }, { note: 'C', y: 55 }, { note: 'G', y: 70 }, { note: 'D', y: 50 }, { note: 'A', y: 65 }] },
-            'Gb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }] },
-            'Db': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }] },
-            'Ab': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }] },
-            'Eb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }] },
-            'Bb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }] },
-            'F': { type: 'flat', accidentals: [{ note: 'B', y: 60 }] },
+            // Major sharp keys (F C G D A E B pattern)
+            'G': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }] }, // F# on top line
+            'D': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }] }, // F# top line, C# space
+            'A': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }] }, // G# above staff
+            'E': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }, { note: 'D', y: 50 }] }, // D# on 4th line
+            'B': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }, { note: 'D', y: 50 }, { note: 'A', y: 65 }] }, // A# space
+            // Major flat keys (B E A D G C F pattern)
+            'F': { type: 'flat', accidentals: [{ note: 'B', y: 60 }] }, // Bb on middle line
+            'Bb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }] }, // Eb on space
+            'Eb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }] }, // Ab on space
+            'Ab': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }] }, // Db on line
+            'Db': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }] }, // Gb on line
+            'Gb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }] }, // Cb on space
             // Minor keys - using natural minor key signatures
             'Am': { type: 'none', accidentals: [] },
-            'Em': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }] },
-            'Bm': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }, { note: 'C', y: 55 }] },
-            'Gbm': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }, { note: 'C', y: 55 }, { note: 'G', y: 70 }] },
-            'Dbm': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }, { note: 'C', y: 55 }, { note: 'G', y: 70 }, { note: 'D', y: 50 }, { note: 'A', y: 65 }] },
-            'Abm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }, { note: 'F', y: 75 }] },
-            'Ebm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }] },
-            'Bbm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }] },
-            'Fm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }] },
-            'Cm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }] },
-            'Gm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }] },
-            'Dm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }] }
+            'Em': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }] }, // 1 sharp
+            'Bm': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }] }, // 2 sharps
+            'Gbm': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }] }, // 3 sharps (F#m)
+            'Dbm': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }, { note: 'D', y: 50 }, { note: 'A', y: 65 }] }, // 5 sharps (C#m)
+            'Dm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }] }, // 1 flat
+            'Gm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }] }, // 2 flats
+            'Cm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }] }, // 3 flats
+            'Fm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }] }, // 4 flats
+            'Bbm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }] }, // 5 flats
+            'Ebm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }] }, // 6 flats
+            'Abm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }, { note: 'F', y: 75 }] } // 7 flats
         };
 
         this.init();
