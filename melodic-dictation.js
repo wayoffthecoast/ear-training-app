@@ -80,31 +80,32 @@ class MelodicDictation {
 
         // Key signature accidentals for display on treble clef
         // Format: { type: 'sharp' or 'flat', accidentals: [list of notes with their y-positions] }
+        // All y-positions constrained to be within staff bounds (y=40 top line to y=80 bottom line)
         this.keySignatureAccidentals = {
             'C': { type: 'none', accidentals: [] },
-            'G': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }] },
-            'D': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }] },
-            'A': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 33 }] },
-            'E': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 33 }, { note: 'D', y: 48 }] },
-            'B': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 33 }, { note: 'D', y: 48 }, { note: 'A', y: 63 }] },
-            'Gb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }] },
-            'Db': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }] },
-            'Ab': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }] },
-            'Eb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }] },
-            'Bb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }] },
+            'G': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }] },
+            'D': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }, { note: 'C', y: 55 }] },
+            'A': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }, { note: 'C', y: 55 }, { note: 'G', y: 70 }] },
+            'E': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }, { note: 'C', y: 55 }, { note: 'G', y: 70 }, { note: 'D', y: 50 }] },
+            'B': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }, { note: 'C', y: 55 }, { note: 'G', y: 70 }, { note: 'D', y: 50 }, { note: 'A', y: 65 }] },
+            'Gb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }] },
+            'Db': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }] },
+            'Ab': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }] },
+            'Eb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }] },
+            'Bb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }] },
             'F': { type: 'flat', accidentals: [{ note: 'B', y: 60 }] },
             // Minor keys - using natural minor key signatures
             'Am': { type: 'none', accidentals: [] },
-            'Em': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }] },
-            'Bm': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }] },
-            'Gbm': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 33 }] },
-            'Dbm': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 33 }, { note: 'D', y: 48 }, { note: 'A', y: 63 }] },
-            'Abm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }, { note: 'F', y: 40 }] },
-            'Ebm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }] },
-            'Bbm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }] },
-            'Fm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }] },
-            'Cm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }] },
-            'Gm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }] },
+            'Em': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }] },
+            'Bm': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }, { note: 'C', y: 55 }] },
+            'Gbm': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }, { note: 'C', y: 55 }, { note: 'G', y: 70 }] },
+            'Dbm': { type: 'sharp', accidentals: [{ note: 'F', y: 75 }, { note: 'C', y: 55 }, { note: 'G', y: 70 }, { note: 'D', y: 50 }, { note: 'A', y: 65 }] },
+            'Abm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }, { note: 'F', y: 75 }] },
+            'Ebm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }] },
+            'Bbm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }] },
+            'Fm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }] },
+            'Cm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }, { note: 'A', y: 65 }] },
+            'Gm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 80 }] },
             'Dm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }] }
         };
 
@@ -535,7 +536,7 @@ class MelodicDictation {
             // Draw accidental if needed
             if (noteInfo.accidental) {
                 const accidental = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                accidental.setAttribute('x', x - 12);
+                accidental.setAttribute('x', x - 20);
                 accidental.setAttribute('y', y + 5);
                 accidental.setAttribute('font-size', '20');
                 accidental.setAttribute('font-family', 'serif');
