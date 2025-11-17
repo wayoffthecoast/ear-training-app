@@ -395,6 +395,18 @@
         <!-- Settings Panel -->
         <div id="settingsPanel" class="settings">
             <div class="setting-group">
+                <label for="instrumentSelect">Instrument:</label>
+                <select id="instrumentSelect">
+                    <option value="piano" selected>Acoustic Piano</option>
+                    <option value="electric-piano">Electric Piano</option>
+                    <option value="acoustic-guitar">Acoustic Guitar</option>
+                    <option value="electric-guitar">Electric Guitar</option>
+                    <option value="acoustic-bass">Acoustic Bass</option>
+                    <option value="electric-bass">Electric Bass</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
                 <label for="keySelect">Key:</label>
                 <select id="keySelect">
                     <option value="C">C Major</option>
@@ -528,6 +540,7 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="melodic-dictation.js"></script>
 </body>
 </html>

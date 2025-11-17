@@ -5,6 +5,7 @@ class MelodicDictation {
     constructor() {
         this.audioContext = null;
         this.currentKey = 'Bb';
+        this.currentInstrument = 'piano';
         this.cadenceType = 'i-iv-v'; // Default cadence
         this.melodyLength = 4;
         this.numQuestions = 10;
@@ -15,6 +16,8 @@ class MelodicDictation {
         this.correctAnswers = 0;
         this.isPlaying = false;
         this.playbackSpeed = 1.0;
+        this.sampler = null;
+        this.instrumentLoaded = false;
 
         // Note frequencies (C4 = middle C)
         this.baseFrequencies = {
@@ -34,6 +37,16 @@ class MelodicDictation {
         
         // Chromatic scale intervals (all 12 semitones from root)
         this.chromaticIntervals = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+
+        // Instrument mapping to soundfont names
+        this.instrumentMap = {
+            'piano': 'acoustic_grand_piano',
+            'electric-piano': 'electric_piano_1',
+            'acoustic-guitar': 'acoustic_guitar_nylon',
+            'electric-guitar': 'electric_guitar_clean',
+            'acoustic-bass': 'acoustic_bass',
+            'electric-bass': 'electric_bass_finger'
+        };
 
         // Note names for each key (all 12 chromatic notes with enharmonic spellings)
         this.keySignatures = {
@@ -68,11 +81,10 @@ class MelodicDictation {
     }
     
     init() {
-        // Initialize audio context on user interaction
-        document.addEventListener('click', () => {
-            if (!this.audioContext) {
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
+        // Initialize Tone.js on user interaction
+        document.addEventListener('click', async () => {
+            await Tone.start();
+            console.log('Tone.js audio context started');
         }, { once: true });
 
         // Load saved speed from localStorage
@@ -84,11 +96,91 @@ class MelodicDictation {
         }
 
         this.setupEventListeners();
+        this.loadInstrument(this.currentInstrument);
+    }
+
+    async loadInstrument(instrumentKey) {
+        this.instrumentLoaded = false;
+
+        const instrumentName = this.instrumentMap[instrumentKey];
+        const baseUrl = `https://tonejs.github.io/audio/salamander/`;
+
+        // Create sample URLs for Tone.js Sampler
+        // Using a subset of notes and letting Tone.js interpolate
+        const samples = {};
+
+        // For piano-based instruments, use Salamander piano samples
+        // For other instruments, we'll use a simpler synth approach
+        if (instrumentKey === 'piano') {
+            // Load piano samples at specific intervals
+            const notes = ['A0', 'C1', 'D#1', 'F#1', 'A1', 'C2', 'D#2', 'F#2', 'A2',
+                          'C3', 'D#3', 'F#3', 'A3', 'C4', 'D#4', 'F#4', 'A4',
+                          'C5', 'D#5', 'F#5', 'A5', 'C6', 'D#6', 'F#6', 'A6', 'C7'];
+
+            notes.forEach(note => {
+                samples[note] = `${note}.mp3`;
+            });
+
+            // Dispose of old sampler if it exists
+            if (this.sampler) {
+                this.sampler.dispose();
+            }
+
+            // Create new sampler with loaded samples
+            this.sampler = new Tone.Sampler({
+                urls: samples,
+                baseUrl: baseUrl,
+                release: 1,
+                onload: () => {
+                    this.instrumentLoaded = true;
+                    console.log(`Piano loaded successfully`);
+                }
+            }).toDestination();
+        } else {
+            // For non-piano instruments, use Tone.js synthesizers
+            // Dispose of old sampler if it exists
+            if (this.sampler) {
+                this.sampler.dispose();
+            }
+
+            // Map instruments to different synth configurations
+            const synthConfigs = {
+                'electric-piano': {
+                    oscillator: { type: 'sine' },
+                    envelope: { attack: 0.02, decay: 0.3, sustain: 0.1, release: 0.8 }
+                },
+                'acoustic-guitar': {
+                    oscillator: { type: 'triangle' },
+                    envelope: { attack: 0.001, decay: 1.5, sustain: 0, release: 1.5 }
+                },
+                'electric-guitar': {
+                    oscillator: { type: 'sawtooth' },
+                    envelope: { attack: 0.002, decay: 0.5, sustain: 0.2, release: 0.5 }
+                },
+                'acoustic-bass': {
+                    oscillator: { type: 'triangle' },
+                    envelope: { attack: 0.01, decay: 0.5, sustain: 0.3, release: 1 }
+                },
+                'electric-bass': {
+                    oscillator: { type: 'sawtooth' },
+                    envelope: { attack: 0.01, decay: 0.3, sustain: 0.2, release: 0.7 }
+                }
+            };
+
+            const config = synthConfigs[instrumentKey] || synthConfigs['electric-piano'];
+            this.sampler = new Tone.PolySynth(Tone.Synth, config).toDestination();
+            this.instrumentLoaded = true;
+            console.log(`Instrument ${instrumentKey} loaded successfully (synth)`);
+        }
     }
     
     setupEventListeners() {
         // Settings panel
         document.getElementById('startBtn').addEventListener('click', () => this.startExercise());
+        document.getElementById('instrumentSelect').addEventListener('change', (e) => {
+            this.currentInstrument = e.target.value;
+            this.loadInstrument(this.currentInstrument);
+        });
         document.getElementById('keySelect').addEventListener('change', (e) => {
             this.currentKey = e.target.value;
         });
@@ -350,67 +442,73 @@ class MelodicDictation {
         return this.isMinorKey() ? this.currentKey.slice(0, -1) : this.currentKey;
     }
 
-    getFrequency(scaleDegree, octaveOffset = 0) {
+    getNoteName(scaleDegree) {
         const rootKey = this.getRootKey();
-        const rootFreq = this.baseFrequencies[rootKey];
 
         // Handle scale degrees above 12 by calculating automatic octave offset
         let degree = scaleDegree;
-        let autoOctaveOffset = 0;
+        let octaveOffset = 0;
         while (degree > 12) {
             degree -= 12;
-            autoOctaveOffset += 1;
+            octaveOffset += 1;
         }
 
+        // Get the chromatic interval (0-11 semitones from root)
         const semitones = this.chromaticIntervals[degree - 1];
-        return rootFreq * Math.pow(2, (semitones + (octaveOffset + autoOctaveOffset) * 12) / 12);
+
+        // Calculate the MIDI note number (C4 = 60)
+        const rootMidi = {
+            'C': 60, 'Db': 61, 'D': 62, 'Eb': 63, 'E': 64, 'F': 65,
+            'Gb': 66, 'G': 67, 'Ab': 68, 'A': 69, 'Bb': 70, 'B': 71
+        };
+
+        const midiNote = rootMidi[rootKey] + semitones + (octaveOffset * 12);
+
+        // Convert MIDI note to note name with octave
+        const noteNames = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'];
+        const octave = Math.floor(midiNote / 12) - 1;
+        const noteName = noteNames[midiNote % 12];
+
+        return noteName + octave;
     }
-    
+
     async playNote(scaleDegree, duration = 0.5, startTime = null) {
-        if (!this.audioContext) return;
+        if (!this.sampler || !this.instrumentLoaded) return;
 
-        const now = startTime || this.audioContext.currentTime;
-        const freq = this.getFrequency(scaleDegree);
+        const noteName = this.getNoteName(scaleDegree);
+        const now = startTime !== null ? startTime : Tone.now();
 
-        // Create oscillator
-        const osc = this.audioContext.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, now);
+        // Adjust duration based on playback speed
+        const adjustedDuration = duration / this.playbackSpeed;
 
-        // Create gain for envelope (scale attack time with playback speed)
-        const gainNode = this.audioContext.createGain();
-        const attackTime = 0.01 / this.playbackSpeed;
-        gainNode.gain.setValueAtTime(0, now);
-        gainNode.gain.linearRampToValueAtTime(0.3, now + attackTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
-
-        // Connect and play
-        osc.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
-
-        osc.start(now);
-        osc.stop(now + duration);
+        try {
+            // Trigger the sampler/synth with the note
+            this.sampler.triggerAttackRelease(noteName, adjustedDuration, now);
+        } catch (error) {
+            console.error('Error playing note:', error);
+        }
     }
     
     async playChord(degrees, duration = 1.0, startTime = null) {
-        if (!this.audioContext) return;
-        
-        const now = startTime || this.audioContext.currentTime;
-        
+        if (!this.sampler || !this.instrumentLoaded) return;
+
+        const now = startTime !== null ? startTime : Tone.now();
+
         degrees.forEach(degree => {
             this.playNote(degree, duration, now);
         });
     }
-    
+
     async playChordProgression() {
         if (this.isPlaying) return;
         this.isPlaying = true;
 
-        if (!this.audioContext) {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (!this.sampler || !this.instrumentLoaded) {
+            this.isPlaying = false;
+            return;
         }
 
-        const now = this.audioContext.currentTime;
+        const now = Tone.now();
         const chordDuration = 0.8 / this.playbackSpeed;
         const gap = 0.1 / this.playbackSpeed;
 
@@ -453,16 +551,17 @@ class MelodicDictation {
             }, 4 * (chordDuration + gap) * 1000);
         }
     }
-    
+
     async playMelody() {
         if (this.isPlaying) return;
         this.isPlaying = true;
-        
-        if (!this.audioContext) {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        if (!this.sampler || !this.instrumentLoaded) {
+            this.isPlaying = false;
+            return;
         }
-        
-        const now = this.audioContext.currentTime;
+
+        const now = Tone.now();
         const noteDuration = 0.5 / this.playbackSpeed;
         const gap = 0.1 / this.playbackSpeed;
 
@@ -470,7 +569,7 @@ class MelodicDictation {
             const startTime = now + index * (noteDuration + gap);
             this.playNote(degree, noteDuration, startTime);
         });
-        
+
         setTimeout(() => {
             this.isPlaying = false;
         }, this.currentMelody.length * (noteDuration + gap) * 1000);
