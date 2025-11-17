@@ -300,11 +300,11 @@ class MelodicDictation {
         return rootFreq * Math.pow(2, (semitones + octaveOffset * 12) / 12);
     }
     
-    async playNote(scaleDegree, duration = 0.5, startTime = null) {
+    async playNote(scaleDegree, duration = 0.5, startTime = null, octaveOffset = 0) {
         if (!this.audioContext) return;
 
         const now = startTime || this.audioContext.currentTime;
-        const freq = this.getFrequency(scaleDegree);
+        const freq = this.getFrequency(scaleDegree, octaveOffset);
 
         // Create oscillator
         const osc = this.audioContext.createOscillator();
@@ -326,34 +326,59 @@ class MelodicDictation {
         osc.stop(now + duration);
     }
     
-    async playChord(degrees, duration = 1.0, startTime = null) {
+    async playChord(notes, duration = 1.0, startTime = null) {
         if (!this.audioContext) return;
-        
+
         const now = startTime || this.audioContext.currentTime;
-        
-        degrees.forEach(degree => {
-            this.playNote(degree, duration, now);
+
+        notes.forEach(note => {
+            const degree = typeof note === 'object' ? note.degree : note;
+            const octave = typeof note === 'object' ? note.octave : 0;
+            this.playNote(degree, duration, now, octave);
         });
     }
     
     async playChordProgression() {
         if (this.isPlaying) return;
         this.isPlaying = true;
-        
+
         if (!this.audioContext) {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
-        
+
         const now = this.audioContext.currentTime;
         const chordDuration = 0.8 / this.playbackSpeed;
         const gap = 0.1 / this.playbackSpeed;
 
-        // I - IV - V - I progression
-        await this.playChord([1, 3, 5], chordDuration, now);
-        await this.playChord([4, 6, 1], chordDuration, now + chordDuration + gap);
-        await this.playChord([5, 7, 2], chordDuration, now + 2 * (chordDuration + gap));
-        await this.playChord([1, 3, 5], chordDuration, now + 3 * (chordDuration + gap));
-        
+        // I - IV - V - I progression (using proper major chord intervals)
+        // I chord: root, major 3rd, perfect 5th = degrees 1, 5, 8
+        await this.playChord([
+            {degree: 1, octave: 0},
+            {degree: 5, octave: 0},
+            {degree: 8, octave: 0}
+        ], chordDuration, now);
+
+        // IV chord: 4th, 6th, root (octave up) = degrees 6, 10, 1+octave
+        await this.playChord([
+            {degree: 6, octave: 0},
+            {degree: 10, octave: 0},
+            {degree: 1, octave: 1}
+        ], chordDuration, now + chordDuration + gap);
+
+        // V chord: 5th, 7th, 2nd (octave up) = degrees 8, 12, 3+octave
+        await this.playChord([
+            {degree: 8, octave: 0},
+            {degree: 12, octave: 0},
+            {degree: 3, octave: 1}
+        ], chordDuration, now + 2 * (chordDuration + gap));
+
+        // I chord again
+        await this.playChord([
+            {degree: 1, octave: 0},
+            {degree: 5, octave: 0},
+            {degree: 8, octave: 0}
+        ], chordDuration, now + 3 * (chordDuration + gap));
+
         setTimeout(() => {
             this.isPlaying = false;
         }, 4 * (chordDuration + gap) * 1000);
