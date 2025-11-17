@@ -5,6 +5,9 @@ class MelodicDictation {
     constructor() {
         this.audioContext = null;
         this.currentKey = 'Bb';
+        this.currentInstrument = 'acoustic_grand_piano';
+        this.instrument = null; // Will hold the loaded soundfont instrument
+        this.isLoadingInstrument = false;
         this.cadenceType = 'i-iv-v'; // Default cadence
         this.melodyLength = 4;
         this.numQuestions = 10;
@@ -72,6 +75,8 @@ class MelodicDictation {
         document.addEventListener('click', () => {
             if (!this.audioContext) {
                 this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                // Load the initial instrument
+                this.loadInstrument(this.currentInstrument);
             }
         }, { once: true });
 
@@ -85,10 +90,37 @@ class MelodicDictation {
 
         this.setupEventListeners();
     }
+
+    async loadInstrument(instrumentName) {
+        if (this.isLoadingInstrument || !this.audioContext) return;
+
+        this.isLoadingInstrument = true;
+        console.log(`Loading instrument: ${instrumentName}`);
+
+        try {
+            // Load the soundfont instrument
+            this.instrument = await Soundfont.instrument(this.audioContext, instrumentName, {
+                soundfont: 'MusyngKite',
+                gain: 3.0 // Increase volume
+            });
+            console.log(`Instrument ${instrumentName} loaded successfully`);
+        } catch (error) {
+            console.error(`Error loading instrument ${instrumentName}:`, error);
+            this.instrument = null;
+        } finally {
+            this.isLoadingInstrument = false;
+        }
+    }
     
     setupEventListeners() {
         // Settings panel
         document.getElementById('startBtn').addEventListener('click', () => this.startExercise());
+        document.getElementById('instrumentSelect').addEventListener('change', (e) => {
+            this.currentInstrument = e.target.value;
+            if (this.audioContext) {
+                this.loadInstrument(this.currentInstrument);
+            }
+        });
         document.getElementById('keySelect').addEventListener('change', (e) => {
             this.currentKey = e.target.value;
         });
@@ -365,31 +397,77 @@ class MelodicDictation {
         const semitones = this.chromaticIntervals[degree - 1];
         return rootFreq * Math.pow(2, (semitones + (octaveOffset + autoOctaveOffset) * 12) / 12);
     }
+
+    getMidiNote(scaleDegree, octaveOffset = 0) {
+        const rootKey = this.getRootKey();
+
+        // MIDI note numbers: C4 = 60, which is middle C
+        const rootMidiNotes = {
+            'C': 60,
+            'Db': 61,
+            'D': 62,
+            'Eb': 63,
+            'E': 64,
+            'F': 65,
+            'Gb': 66,
+            'G': 67,
+            'Ab': 68,
+            'A': 69,
+            'Bb': 70,
+            'B': 71
+        };
+
+        // Handle scale degrees above 12 by calculating automatic octave offset
+        let degree = scaleDegree;
+        let autoOctaveOffset = 0;
+        while (degree > 12) {
+            degree -= 12;
+            autoOctaveOffset += 1;
+        }
+
+        const rootMidi = rootMidiNotes[rootKey];
+        const semitones = this.chromaticIntervals[degree - 1];
+        return rootMidi + semitones + (octaveOffset + autoOctaveOffset) * 12;
+    }
     
     async playNote(scaleDegree, duration = 0.5, startTime = null) {
         if (!this.audioContext) return;
 
         const now = startTime || this.audioContext.currentTime;
-        const freq = this.getFrequency(scaleDegree);
 
-        // Create oscillator
-        const osc = this.audioContext.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, now);
+        // Use soundfont instrument if loaded
+        if (this.instrument) {
+            const midiNote = this.getMidiNote(scaleDegree);
+            const when = now - this.audioContext.currentTime;
 
-        // Create gain for envelope (scale attack time with playback speed)
-        const gainNode = this.audioContext.createGain();
-        const attackTime = 0.01 / this.playbackSpeed;
-        gainNode.gain.setValueAtTime(0, now);
-        gainNode.gain.linearRampToValueAtTime(0.3, now + attackTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
+            // Play the note using soundfont
+            this.instrument.play(midiNote, when, {
+                duration: duration,
+                gain: 2.0
+            });
+        } else {
+            // Fallback to oscillator
+            const freq = this.getFrequency(scaleDegree);
 
-        // Connect and play
-        osc.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
+            // Create oscillator
+            const osc = this.audioContext.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now);
 
-        osc.start(now);
-        osc.stop(now + duration);
+            // Create gain for envelope (scale attack time with playback speed)
+            const gainNode = this.audioContext.createGain();
+            const attackTime = 0.01 / this.playbackSpeed;
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(0.3, now + attackTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+            // Connect and play
+            osc.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+
+            osc.start(now);
+            osc.stop(now + duration);
+        }
     }
     
     async playChord(degrees, duration = 1.0, startTime = null) {
