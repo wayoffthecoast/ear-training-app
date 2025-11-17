@@ -182,8 +182,8 @@ class MelodicDictation {
                 document.getElementById('submitBtn').disabled = false;
             }
 
-            // Play note feedback (apply speed)
-            this.playNote(degree, 0.3 / this.playbackSpeed);
+            // Play note feedback
+            this.playNote(degree, 0.3);
         }
     }
     
@@ -311,9 +311,9 @@ class MelodicDictation {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(freq, now);
 
-        // Create gain for envelope (scale attack time with playback speed)
+        // Create gain for envelope
         const gainNode = this.audioContext.createGain();
-        const attackTime = 0.01 / this.playbackSpeed;
+        const attackTime = 0.01;
         gainNode.gain.setValueAtTime(0, now);
         gainNode.gain.linearRampToValueAtTime(0.3, now + attackTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
