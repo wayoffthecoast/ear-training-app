@@ -389,7 +389,7 @@
         <h1>🎵 Melodic Dictation</h1>
         <p class="subtitle">
             Train your ear to recognize chromatic melodies.<br>
-            Listen to the chord progression to establish the key, then identify the notes in the melody using all 12 chromatic notes.
+            Listen to the cadence to establish the key, then identify the notes in the melody using all 12 chromatic notes.
         </p>
 
         <!-- Settings Panel -->
@@ -409,6 +409,27 @@
                     <option value="A">A Major</option>
                     <option value="Bb" selected>Bb Major</option>
                     <option value="B">B Major</option>
+                    <option value="Cm">C Minor</option>
+                    <option value="Dbm">Db Minor</option>
+                    <option value="Dm">D Minor</option>
+                    <option value="Ebm">Eb Minor</option>
+                    <option value="Em">E Minor</option>
+                    <option value="Fm">F Minor</option>
+                    <option value="Gbm">Gb Minor</option>
+                    <option value="Gm">G Minor</option>
+                    <option value="Abm">Ab Minor</option>
+                    <option value="Am">A Minor</option>
+                    <option value="Bbm">Bb Minor</option>
+                    <option value="Bm">B Minor</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label for="cadenceSelect">Cadence:</label>
+                <select id="cadenceSelect">
+                    <option value="root">Root Note Only</option>
+                    <option value="none">No Cadence</option>
+                    <option value="i-iv-v" selected>I-IV-V Progression</option>
                 </select>
             </div>
 
@@ -479,7 +500,7 @@
             </div>
 
             <div class="controls">
-                <button id="playChordBtn" class="btn">🎹 Play Chord Progression</button>
+                <button id="playChordBtn" class="btn">🎹 Play Cadence</button>
                 <button id="playMelodyBtn" class="btn">🎵 Play Melody</button>
             </div>
 

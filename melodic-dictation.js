@@ -5,6 +5,7 @@ class MelodicDictation {
     constructor() {
         this.audioContext = null;
         this.currentKey = 'Bb';
+        this.cadenceType = 'i-iv-v'; // Default cadence
         this.melodyLength = 4;
         this.numQuestions = 10;
         this.maxInterval = 12; // Default to 12 semitones (octave)
@@ -47,7 +48,20 @@ class MelodicDictation {
             'Ab': ['Ab', 'A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G'],
             'A': ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'],
             'Bb': ['Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A'],
-            'B': ['B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#']
+            'B': ['B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#'],
+            // Minor keys
+            'Cm': ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'],
+            'Dbm': ['Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'Cb', 'C'],
+            'Dm': ['D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B', 'C', 'C#'],
+            'Ebm': ['Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'Cb', 'C', 'Db', 'D'],
+            'Em': ['E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B', 'C', 'C#', 'D', 'D#'],
+            'Fm': ['F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'Cb', 'C', 'Db', 'D', 'Eb', 'E'],
+            'Gbm': ['Gb', 'G', 'Ab', 'A', 'Bb', 'Cb', 'C', 'Db', 'D', 'Eb', 'Fb', 'F'],
+            'Gm': ['G', 'Ab', 'A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'F#'],
+            'Abm': ['Ab', 'A', 'Bb', 'Cb', 'C', 'Db', 'D', 'Eb', 'Fb', 'F', 'Gb', 'G'],
+            'Am': ['A', 'Bb', 'B', 'C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#'],
+            'Bbm': ['Bb', 'Cb', 'C', 'Db', 'D', 'Eb', 'Fb', 'F', 'Gb', 'G', 'Ab', 'A'],
+            'Bm': ['B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#']
         };
         
         this.init();
@@ -77,6 +91,9 @@ class MelodicDictation {
         document.getElementById('startBtn').addEventListener('click', () => this.startExercise());
         document.getElementById('keySelect').addEventListener('change', (e) => {
             this.currentKey = e.target.value;
+        });
+        document.getElementById('cadenceSelect').addEventListener('change', (e) => {
+            this.cadenceType = e.target.value;
         });
         document.getElementById('melodyLength').addEventListener('change', (e) => {
             this.melodyLength = parseInt(e.target.value);
@@ -324,10 +341,29 @@ class MelodicDictation {
     
     // Audio generation methods
     
+    isMinorKey() {
+        return this.currentKey.endsWith('m');
+    }
+
+    getRootKey() {
+        // Get the root note without the 'm' suffix
+        return this.isMinorKey() ? this.currentKey.slice(0, -1) : this.currentKey;
+    }
+
     getFrequency(scaleDegree, octaveOffset = 0) {
-        const rootFreq = this.baseFrequencies[this.currentKey];
-        const semitones = this.chromaticIntervals[scaleDegree - 1];
-        return rootFreq * Math.pow(2, (semitones + octaveOffset * 12) / 12);
+        const rootKey = this.getRootKey();
+        const rootFreq = this.baseFrequencies[rootKey];
+
+        // Handle scale degrees above 12 by calculating automatic octave offset
+        let degree = scaleDegree;
+        let autoOctaveOffset = 0;
+        while (degree > 12) {
+            degree -= 12;
+            autoOctaveOffset += 1;
+        }
+
+        const semitones = this.chromaticIntervals[degree - 1];
+        return rootFreq * Math.pow(2, (semitones + (octaveOffset + autoOctaveOffset) * 12) / 12);
     }
     
     async playNote(scaleDegree, duration = 0.5, startTime = null) {
@@ -369,24 +405,53 @@ class MelodicDictation {
     async playChordProgression() {
         if (this.isPlaying) return;
         this.isPlaying = true;
-        
+
         if (!this.audioContext) {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
-        
+
         const now = this.audioContext.currentTime;
         const chordDuration = 0.8 / this.playbackSpeed;
         const gap = 0.1 / this.playbackSpeed;
 
-        // I - IV - V - I progression
-        await this.playChord([1, 3, 5], chordDuration, now);
-        await this.playChord([4, 6, 1], chordDuration, now + chordDuration + gap);
-        await this.playChord([5, 7, 2], chordDuration, now + 2 * (chordDuration + gap));
-        await this.playChord([1, 3, 5], chordDuration, now + 3 * (chordDuration + gap));
-        
-        setTimeout(() => {
+        if (this.cadenceType === 'none') {
+            // No cadence - just mark as not playing
             this.isPlaying = false;
-        }, 4 * (chordDuration + gap) * 1000);
+            return;
+        } else if (this.cadenceType === 'root') {
+            // Play just the root note
+            await this.playNote(1, chordDuration * 2, now);
+            setTimeout(() => {
+                this.isPlaying = false;
+            }, (chordDuration * 2) * 1000);
+        } else if (this.cadenceType === 'i-iv-v') {
+            // I - IV - V - I progression
+            const isMinor = this.isMinorKey();
+
+            if (isMinor) {
+                // Minor key chords in root position:
+                // i chord (C minor) = C, Eb, G = 1, 4, 8
+                // iv chord (F minor) = F, Ab, C = 6, 9, 13 (C is octave up)
+                // v chord (G minor) = G, Bb, D = 8, 11, 15 (D is octave up)
+                await this.playChord([1, 4, 8], chordDuration, now); // i chord
+                await this.playChord([6, 9, 13], chordDuration, now + chordDuration + gap); // iv chord
+                await this.playChord([8, 11, 15], chordDuration, now + 2 * (chordDuration + gap)); // v chord
+                await this.playChord([1, 4, 8], chordDuration, now + 3 * (chordDuration + gap)); // i chord
+            } else {
+                // Major key chords in root position:
+                // I chord (C major) = C, E, G = 1, 5, 8
+                // IV chord (F major) = F, A, C = 6, 10, 13 (C is octave up)
+                // V chord (G major) = G, B, D = 8, 12, 15 (D is octave up)
+                await this.playChord([1, 5, 8], chordDuration, now); // I chord
+                await this.playChord([6, 10, 13], chordDuration, now + chordDuration + gap); // IV chord
+                await this.playChord([8, 12, 15], chordDuration, now + 2 * (chordDuration + gap)); // V chord
+                await this.playChord([1, 5, 8], chordDuration, now + 3 * (chordDuration + gap)); // I chord
+            }
+
+            setTimeout(() => {
+                this.isPlaying = false;
+            }, 4 * (chordDuration + gap) * 1000);
+        }
     }
     
     async playMelody() {
