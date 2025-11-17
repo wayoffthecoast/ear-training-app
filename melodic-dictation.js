@@ -20,6 +20,13 @@ class MelodicDictation {
         this.playbackSpeed = 1.0;
         this.isInitialCadence = false; // Track if this is the first cadence play for auto-melody
         this.incorrectButtons = new Set(); // Track buttons that have been marked as incorrect
+        this.completedMelodies = 0; // Track completed melodies
+        this.totalErrors = 0; // Track total errors
+        this.quizStartTime = null; // Track quiz start time
+        this.melodyStartTime = null; // Track melody start time
+        this.melodyTimes = []; // Track time for each melody
+        this.randomKeys = false; // Track if random keys mode is enabled
+        this.correctNotesOnStaff = []; // Track notes to display on staff
 
         // Note frequencies (C4 = middle C)
         this.baseFrequencies = {
@@ -150,23 +157,39 @@ class MelodicDictation {
         document.getElementById('submitBtn').addEventListener('click', () => this.submitAnswer());
         document.getElementById('clearBtn').addEventListener('click', () => this.clearAnswer());
         document.getElementById('hearNextBtn').addEventListener('click', () => this.moveToNextQuestion());
+        document.getElementById('stopQuizBtn').addEventListener('click', () => this.stopQuiz());
+        document.getElementById('randomKeysBtn').addEventListener('click', () => this.toggleRandomKeys());
         document.getElementById('restartBtn').addEventListener('click', () => this.restart());
     }
     
     startExercise() {
         this.currentQuestion = 0;
         this.correctAnswers = 0;
+        this.completedMelodies = 0;
+        this.totalErrors = 0;
+        this.melodyTimes = [];
+        this.quizStartTime = Date.now();
+        this.melodyStartTime = Date.now();
         document.getElementById('settingsPanel').style.display = 'none';
         document.getElementById('exerciseArea').classList.add('active');
         document.getElementById('resultsArea').classList.remove('active');
+        this.updateStatistics();
         this.nextQuestion();
     }
     
     nextQuestion() {
         this.currentQuestion++;
         this.userAnswer = [];
+        this.correctNotesOnStaff = []; // Clear staff notes
         this.incorrectButtons.clear(); // Reset incorrect buttons tracking
         this.isInitialCadence = true; // Mark that this is the initial cadence
+        this.melodyStartTime = Date.now(); // Start timer for this melody
+
+        // If random keys is enabled, select a random key
+        if (this.randomKeys) {
+            const keys = Object.keys(this.keySignatures);
+            this.currentKey = keys[Math.floor(Math.random() * keys.length)];
+        }
 
         // Update UI
         document.getElementById('currentQ').textContent = this.currentQuestion;
@@ -188,6 +211,9 @@ class MelodicDictation {
 
         // Setup scale degree buttons
         this.setupScaleDegreeButtons();
+
+        // Update staff display
+        this.updateStaffDisplay();
 
         // Automatically play chord progression
         setTimeout(() => this.playChordProgression(), 500);
@@ -270,7 +296,9 @@ class MelodicDictation {
             if (degree === correctDegree) {
                 // Correct note selected
                 this.userAnswer.push(degree);
+                this.correctNotesOnStaff.push(degree); // Add to staff display
                 this.updateAnswerSlots();
+                this.updateStaffDisplay();
 
                 // Play note feedback (apply speed)
                 this.playNote(degree, 0.3 / this.playbackSpeed);
@@ -281,11 +309,25 @@ class MelodicDictation {
                     this.onCorrectSequence();
                 }
             } else {
-                // Wrong note selected
+                // Wrong note selected - first, re-enable all previously incorrect buttons
+                this.incorrectButtons.forEach(prevDegree => {
+                    const prevBtn = document.getElementById(`degree-btn-${prevDegree}`);
+                    if (prevBtn) {
+                        prevBtn.classList.remove('incorrect');
+                        prevBtn.disabled = false;
+                    }
+                });
+                this.incorrectButtons.clear();
+
+                // Now mark the new incorrect button
                 const btn = document.getElementById(`degree-btn-${degree}`);
                 btn.classList.add('incorrect');
                 btn.disabled = true;
                 this.incorrectButtons.add(degree);
+
+                // Increment error count
+                this.totalErrors++;
+                this.updateStatistics();
 
                 // Still play the note so user can hear what they selected
                 this.playNote(degree, 0.3 / this.playbackSpeed);
@@ -349,6 +391,12 @@ class MelodicDictation {
         document.getElementById('score').textContent = this.correctAnswers;
         document.getElementById('totalScore').textContent = this.currentQuestion;
 
+        // Record completion time
+        const melodyTime = (Date.now() - this.melodyStartTime) / 1000; // in seconds
+        this.melodyTimes.push(melodyTime);
+        this.completedMelodies++;
+        this.updateStatistics();
+
         // Show success feedback
         const feedback = document.getElementById('feedback');
         feedback.className = 'feedback correct';
@@ -374,7 +422,175 @@ class MelodicDictation {
             this.showResults();
         }
     }
-    
+
+    updateStatistics() {
+        // Update completed count
+        document.getElementById('completedCount').textContent = this.completedMelodies;
+
+        // Update errors count
+        document.getElementById('errorsCount').textContent = this.totalErrors;
+
+        // Update elapsed time
+        if (this.quizStartTime) {
+            const elapsedSeconds = Math.floor((Date.now() - this.quizStartTime) / 1000);
+            document.getElementById('elapsedTime').textContent = elapsedSeconds;
+        }
+
+        // Update average time
+        if (this.melodyTimes.length > 0) {
+            const avgTime = this.melodyTimes.reduce((a, b) => a + b, 0) / this.melodyTimes.length;
+            document.getElementById('avgTime').textContent = avgTime.toFixed(1);
+        } else {
+            document.getElementById('avgTime').textContent = '0.0';
+        }
+
+        // Update elapsed time every second
+        if (this.quizStartTime && !this.statsUpdateInterval) {
+            this.statsUpdateInterval = setInterval(() => {
+                if (this.quizStartTime) {
+                    const elapsedSeconds = Math.floor((Date.now() - this.quizStartTime) / 1000);
+                    document.getElementById('elapsedTime').textContent = elapsedSeconds;
+                }
+            }, 1000);
+        }
+    }
+
+    updateStaffDisplay() {
+        const svg = document.getElementById('staffSvg');
+        const notesGroup = document.getElementById('staffNotes');
+
+        // Clear existing notes
+        notesGroup.innerHTML = '';
+
+        // Define staff properties
+        const staffStart = 120; // Start after treble clef
+        const staffEnd = 550;
+        const availableWidth = staffEnd - staffStart;
+        const noteSpacing = availableWidth / (this.melodyLength + 1);
+
+        // Draw notes on staff
+        this.correctNotesOnStaff.forEach((degree, index) => {
+            const x = staffStart + noteSpacing * (index + 1);
+            const y = this.getNoteYPosition(degree);
+
+            // Draw note head (filled oval)
+            const noteHead = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+            noteHead.setAttribute('cx', x);
+            noteHead.setAttribute('cy', y);
+            noteHead.setAttribute('rx', 6);
+            noteHead.setAttribute('ry', 5);
+            noteHead.setAttribute('fill', 'black');
+            notesGroup.appendChild(noteHead);
+
+            // Draw stem (going up)
+            const stem = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            stem.setAttribute('x1', x + 6);
+            stem.setAttribute('y1', y);
+            stem.setAttribute('x2', x + 6);
+            stem.setAttribute('y2', y - 30);
+            stem.setAttribute('stroke', 'black');
+            stem.setAttribute('stroke-width', '1.5');
+            notesGroup.appendChild(stem);
+
+            // Add ledger lines if needed
+            this.addLedgerLines(notesGroup, x, y);
+        });
+    }
+
+    getNoteYPosition(degree) {
+        // Map chromatic degrees to staff positions
+        // Using treble clef: staff lines from bottom are E4, G4, B4, D5, F5
+        // Middle line is B4
+        // We'll map degrees to positions relative to C major for simplicity
+        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const rootKey = this.getRootKey();
+        const rootIndex = noteNames.indexOf(rootKey);
+
+        // Calculate the chromatic note
+        const chromaticIndex = (rootIndex + (degree - 1)) % 12;
+        const noteName = noteNames[chromaticIndex];
+
+        // Map note names to Y positions on treble clef (C4 to C6)
+        // Staff line spacing is 10 pixels
+        const positions = {
+            'C': 90,   // C4 (below staff)
+            'C#': 90,
+            'D': 85,   // D4 (below staff)
+            'D#': 85,
+            'E': 80,   // E4 (bottom line)
+            'F': 75,   // F4 (between bottom and 2nd line)
+            'F#': 75,
+            'G': 70,   // G4 (2nd line from bottom)
+            'G#': 70,
+            'A': 65,   // A4 (between 2nd and 3rd line)
+            'A#': 65,
+            'B': 60    // B4 (middle line)
+        };
+
+        return positions[noteName] || 60;
+    }
+
+    addLedgerLines(parent, x, y) {
+        // Add ledger lines for notes below or above the staff
+        // Bottom staff line is at y=80, top staff line is at y=40
+        const lineSpacing = 10;
+
+        // Below staff (C4, D4)
+        if (y >= 90) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x - 10);
+            line.setAttribute('y1', 90);
+            line.setAttribute('x2', x + 10);
+            line.setAttribute('y2', 90);
+            line.setAttribute('stroke', 'black');
+            line.setAttribute('stroke-width', '1');
+            parent.appendChild(line);
+        }
+        if (y >= 85 && y < 90) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x - 10);
+            line.setAttribute('y1', 85);
+            line.setAttribute('x2', x + 10);
+            line.setAttribute('y2', 85);
+            line.setAttribute('stroke', 'black');
+            line.setAttribute('stroke-width', '1');
+            parent.appendChild(line);
+        }
+
+        // Above staff
+        if (y <= 30) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x - 10);
+            line.setAttribute('y1', 30);
+            line.setAttribute('x2', x + 10);
+            line.setAttribute('y2', 30);
+            line.setAttribute('stroke', 'black');
+            line.setAttribute('stroke-width', '1');
+            parent.appendChild(line);
+        }
+    }
+
+    stopQuiz() {
+        // Stop the quiz and reset to settings panel
+        if (this.statsUpdateInterval) {
+            clearInterval(this.statsUpdateInterval);
+            this.statsUpdateInterval = null;
+        }
+        this.restart();
+    }
+
+    toggleRandomKeys() {
+        this.randomKeys = !this.randomKeys;
+        const btn = document.getElementById('randomKeysBtn');
+        if (this.randomKeys) {
+            btn.style.background = '#4caf50';
+            btn.textContent = '🎲 Random Keys: ON';
+        } else {
+            btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            btn.textContent = '🎲 Random Keys: OFF';
+        }
+    }
+
     submitAnswer() {
         // Check answer
         const isCorrect = JSON.stringify(this.userAnswer) === JSON.stringify(this.currentMelody);

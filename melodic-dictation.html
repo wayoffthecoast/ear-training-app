@@ -146,6 +146,41 @@
             display: block;
         }
 
+        .statistics {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-align: center;
+            flex: 1;
+            min-width: 100px;
+            border: 2px solid #ddd;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+        }
+
         .progress {
             background: #f8f9fa;
             border-radius: 10px;
@@ -171,6 +206,32 @@
             padding: 8px 16px;
             border-radius: 20px;
             font-weight: 600;
+        }
+
+        .staff-container {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .staff-svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .stop-quiz-row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .stop-quiz-row button {
+            flex: 0 1 300px;
+            background: #f44336;
         }
 
         .controls {
@@ -507,18 +568,59 @@
                 </div>
             </div>
 
+            <div class="setting-group">
+                <button id="randomKeysBtn" class="btn">🎲 Random Keys: OFF</button>
+            </div>
+
             <button id="startBtn" class="btn">Start Exercise</button>
         </div>
 
         <!-- Exercise Area -->
         <div id="exerciseArea" class="exercise-area">
+            <div class="statistics">
+                <div class="stat-item">
+                    <span class="stat-label">Completed</span>
+                    <span class="stat-value" id="completedCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Errors</span>
+                    <span class="stat-value" id="errorsCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Score</span>
+                    <span class="stat-value"><span id="score">0</span>/<span id="totalScore">0</span></span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Time (s)</span>
+                    <span class="stat-value" id="elapsedTime">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Avg Time (s)</span>
+                    <span class="stat-value" id="avgTime">0.0</span>
+                </div>
+            </div>
+
             <div class="progress">
                 <div class="progress-info">
                     Question <strong id="currentQ">1</strong> of <strong id="totalQ">10</strong>
                 </div>
-                <div class="score">
-                    Score: <span id="score">0</span>/<span id="totalScore">0</span>
-                </div>
+            </div>
+
+            <div class="staff-container">
+                <svg id="staffSvg" class="staff-svg" width="600" height="120" viewBox="0 0 600 120">
+                    <!-- Treble clef staff lines -->
+                    <line x1="50" y1="40" x2="550" y2="40" stroke="black" stroke-width="1"/>
+                    <line x1="50" y1="50" x2="550" y2="50" stroke="black" stroke-width="1"/>
+                    <line x1="50" y1="60" x2="550" y2="60" stroke="black" stroke-width="1"/>
+                    <line x1="50" y1="70" x2="550" y2="70" stroke="black" stroke-width="1"/>
+                    <line x1="50" y1="80" x2="550" y2="80" stroke="black" stroke-width="1"/>
+
+                    <!-- Treble clef symbol (simplified) -->
+                    <text x="55" y="75" font-size="60" font-family="serif">𝄞</text>
+
+                    <!-- Group for notes -->
+                    <g id="staffNotes"></g>
+                </svg>
             </div>
 
             <div class="controls">
@@ -537,6 +639,10 @@
                     <button id="submitBtn" class="btn" disabled style="display: none;">Submit Answer</button>
                     <button id="hearNextBtn" class="btn" style="display: none; background: #4caf50;">Hear Next</button>
                 </div>
+            </div>
+
+            <div class="stop-quiz-row">
+                <button id="stopQuizBtn" class="btn">⏹ Stop Quiz</button>
             </div>
 
             <div id="feedback" class="feedback"></div>
