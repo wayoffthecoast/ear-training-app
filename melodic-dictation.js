@@ -77,7 +77,37 @@ class MelodicDictation {
             'Bbm': ['Bb', 'Cb', 'C', 'Db', 'D', 'Eb', 'Fb', 'F', 'Gb', 'G', 'Ab', 'A'],
             'Bm': ['B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#']
         };
-        
+
+        // Key signature accidentals for display on treble clef
+        // Format: { type: 'sharp' or 'flat', accidentals: [list of notes with their y-positions] }
+        this.keySignatureAccidentals = {
+            'C': { type: 'none', accidentals: [] },
+            'G': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }] },
+            'D': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }] },
+            'A': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 33 }] },
+            'E': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 33 }, { note: 'D', y: 48 }] },
+            'B': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 33 }, { note: 'D', y: 48 }, { note: 'A', y: 63 }] },
+            'Gb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }, { note: 'D', y: 45 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }] },
+            'Db': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }, { note: 'D', y: 45 }, { note: 'G', y: 70 }] },
+            'Ab': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }, { note: 'D', y: 45 }] },
+            'Eb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }] },
+            'Bb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }] },
+            'F': { type: 'flat', accidentals: [{ note: 'B', y: 60 }] },
+            // Minor keys - using natural minor key signatures
+            'Am': { type: 'none', accidentals: [] },
+            'Em': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }] },
+            'Bm': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }] },
+            'Gbm': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 33 }] },
+            'Dbm': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 33 }, { note: 'D', y: 48 }, { note: 'A', y: 63 }] },
+            'Abm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }, { note: 'D', y: 45 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }, { note: 'F', y: 80 }] },
+            'Ebm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }, { note: 'D', y: 45 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }] },
+            'Bbm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }, { note: 'D', y: 45 }, { note: 'G', y: 70 }] },
+            'Fm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }, { note: 'D', y: 45 }] },
+            'Cm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }] },
+            'Gm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }] },
+            'Dm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }] }
+        };
+
         this.init();
     }
     
@@ -134,6 +164,10 @@ class MelodicDictation {
         });
         document.getElementById('keySelect').addEventListener('change', (e) => {
             this.currentKey = e.target.value;
+            // Update key signature if exercise is active
+            if (document.getElementById('exerciseArea').classList.contains('active')) {
+                this.updateKeySignature();
+            }
         });
         document.getElementById('cadenceSelect').addEventListener('change', (e) => {
             this.cadenceType = e.target.value;
@@ -212,8 +246,9 @@ class MelodicDictation {
         // Setup scale degree buttons
         this.setupScaleDegreeButtons();
 
-        // Update staff display
+        // Update staff display and key signature
         this.updateStaffDisplay();
+        this.updateKeySignature();
 
         // Automatically play chord progression
         setTimeout(() => this.playChordProgression(), 500);
@@ -370,7 +405,9 @@ class MelodicDictation {
     
     clearAnswer() {
         this.userAnswer = [];
+        this.correctNotesOnStaff = []; // Clear staff notes
         this.updateAnswerSlots();
+        this.updateStaffDisplay(); // Update staff to remove notes
         document.getElementById('submitBtn').disabled = true;
 
         // Remove feedback
@@ -515,6 +552,51 @@ class MelodicDictation {
 
             // Add ledger lines if needed
             this.addLedgerLines(notesGroup, x, y);
+        });
+    }
+
+    updateKeySignature() {
+        const keySignatureGroup = document.getElementById('keySignature');
+
+        // Clear existing key signature
+        keySignatureGroup.innerHTML = '';
+
+        // Get the key signature data for current key
+        const keyData = this.keySignatureAccidentals[this.currentKey];
+        if (!keyData || keyData.type === 'none') {
+            return; // No accidentals to display
+        }
+
+        // Starting x position for key signature (after treble clef)
+        let xPos = 105;
+        const xSpacing = 8; // Space between accidentals
+
+        // Draw each accidental
+        keyData.accidentals.forEach((acc, index) => {
+            const x = xPos + (index * xSpacing);
+            const y = acc.y;
+
+            if (keyData.type === 'sharp') {
+                // Draw sharp symbol (♯)
+                const sharp = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                sharp.setAttribute('x', x);
+                sharp.setAttribute('y', y + 5);
+                sharp.setAttribute('font-size', '20');
+                sharp.setAttribute('font-family', 'serif');
+                sharp.setAttribute('fill', 'black');
+                sharp.textContent = '♯';
+                keySignatureGroup.appendChild(sharp);
+            } else if (keyData.type === 'flat') {
+                // Draw flat symbol (♭)
+                const flat = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                flat.setAttribute('x', x);
+                flat.setAttribute('y', y + 5);
+                flat.setAttribute('font-size', '20');
+                flat.setAttribute('font-family', 'serif');
+                flat.setAttribute('fill', 'black');
+                flat.textContent = '♭';
+                keySignatureGroup.appendChild(flat);
+            }
         });
     }
 
