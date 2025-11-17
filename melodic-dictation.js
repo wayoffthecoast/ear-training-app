@@ -438,10 +438,9 @@ class MelodicDictation {
         // Use soundfont instrument if loaded
         if (this.instrument) {
             const midiNote = this.getMidiNote(scaleDegree);
-            const when = now - this.audioContext.currentTime;
 
-            // Play the note using soundfont
-            this.instrument.play(midiNote, when, {
+            // Play the note using soundfont (expects absolute AudioContext time)
+            this.instrument.play(midiNote, now, {
                 duration: duration,
                 gain: 2.0
             });
