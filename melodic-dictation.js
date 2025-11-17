@@ -87,11 +87,11 @@ class MelodicDictation {
             'A': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 33 }] },
             'E': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 33 }, { note: 'D', y: 48 }] },
             'B': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 33 }, { note: 'D', y: 48 }, { note: 'A', y: 63 }] },
-            'Gb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }, { note: 'D', y: 45 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }] },
-            'Db': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }, { note: 'D', y: 45 }, { note: 'G', y: 70 }] },
-            'Ab': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }, { note: 'D', y: 45 }] },
-            'Eb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }] },
-            'Bb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }] },
+            'Gb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }] },
+            'Db': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }] },
+            'Ab': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }] },
+            'Eb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }] },
+            'Bb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }] },
             'F': { type: 'flat', accidentals: [{ note: 'B', y: 60 }] },
             // Minor keys - using natural minor key signatures
             'Am': { type: 'none', accidentals: [] },
@@ -99,12 +99,12 @@ class MelodicDictation {
             'Bm': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }] },
             'Gbm': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 33 }] },
             'Dbm': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 33 }, { note: 'D', y: 48 }, { note: 'A', y: 63 }] },
-            'Abm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }, { note: 'D', y: 45 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }, { note: 'F', y: 80 }] },
-            'Ebm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }, { note: 'D', y: 45 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }] },
-            'Bbm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }, { note: 'D', y: 45 }, { note: 'G', y: 70 }] },
-            'Fm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }, { note: 'D', y: 45 }] },
-            'Cm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }, { note: 'A', y: 65 }] },
-            'Gm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 50 }] },
+            'Abm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }, { note: 'F', y: 40 }] },
+            'Ebm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }, { note: 'C', y: 55 }] },
+            'Bbm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }, { note: 'G', y: 70 }] },
+            'Fm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }, { note: 'D', y: 50 }] },
+            'Cm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }] },
+            'Gm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }] },
             'Dm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }] }
         };
 
@@ -707,23 +707,14 @@ class MelodicDictation {
         // Bottom staff line is at y=80, top staff line is at y=40
         const lineSpacing = 10;
 
-        // Below staff (C4, D4)
+        // Below staff (only C4 and below need ledger lines)
+        // D4 is in the space below the staff, so it doesn't need a ledger line
         if (y >= 90) {
             const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             line.setAttribute('x1', x - 10);
             line.setAttribute('y1', 90);
             line.setAttribute('x2', x + 10);
             line.setAttribute('y2', 90);
-            line.setAttribute('stroke', 'black');
-            line.setAttribute('stroke-width', '1');
-            parent.appendChild(line);
-        }
-        if (y >= 85 && y < 90) {
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x1', x - 10);
-            line.setAttribute('y1', 85);
-            line.setAttribute('x2', x + 10);
-            line.setAttribute('y2', 85);
             line.setAttribute('stroke', 'black');
             line.setAttribute('stroke-width', '1');
             parent.appendChild(line);
