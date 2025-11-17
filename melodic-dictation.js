@@ -27,6 +27,8 @@ class MelodicDictation {
         this.melodyTimes = []; // Track time for each melody
         this.randomKeys = false; // Track if random keys mode is enabled
         this.correctNotesOnStaff = []; // Track notes to display on staff
+        this.correctButtonPresses = 0; // Track number of correct button presses
+        this.wrongButtonPresses = 0; // Track number of wrong button presses
 
         // Note frequencies (C4 = middle C)
         this.baseFrequencies = {
@@ -194,8 +196,6 @@ class MelodicDictation {
         // Update UI
         document.getElementById('currentQ').textContent = this.currentQuestion;
         document.getElementById('totalQ').textContent = this.numQuestions;
-        document.getElementById('score').textContent = this.correctAnswers;
-        document.getElementById('totalScore').textContent = this.currentQuestion - 1;
         document.getElementById('feedback').style.display = 'none';
         document.getElementById('feedback').className = 'feedback';
 
@@ -294,7 +294,20 @@ class MelodicDictation {
 
             // Check if the selected degree is correct for this position
             if (degree === correctDegree) {
-                // Correct note selected
+                // Correct note selected - reset all incorrect buttons first
+                this.incorrectButtons.forEach(prevDegree => {
+                    const prevBtn = document.getElementById(`degree-btn-${prevDegree}`);
+                    if (prevBtn) {
+                        prevBtn.classList.remove('incorrect');
+                        prevBtn.disabled = false;
+                    }
+                });
+                this.incorrectButtons.clear();
+
+                // Increment correct button presses
+                this.correctButtonPresses++;
+                this.updateStatistics();
+
                 this.userAnswer.push(degree);
                 this.correctNotesOnStaff.push(degree); // Add to staff display
                 this.updateAnswerSlots();
@@ -325,8 +338,9 @@ class MelodicDictation {
                 btn.disabled = true;
                 this.incorrectButtons.add(degree);
 
-                // Increment error count
+                // Increment error count and wrong button presses
                 this.totalErrors++;
+                this.wrongButtonPresses++;
                 this.updateStatistics();
 
                 // Still play the note so user can hear what they selected
@@ -388,8 +402,6 @@ class MelodicDictation {
 
         // Update score
         this.correctAnswers++;
-        document.getElementById('score').textContent = this.correctAnswers;
-        document.getElementById('totalScore').textContent = this.currentQuestion;
 
         // Record completion time
         const melodyTime = (Date.now() - this.melodyStartTime) / 1000; // in seconds
@@ -429,6 +441,15 @@ class MelodicDictation {
 
         // Update errors count
         document.getElementById('errorsCount').textContent = this.totalErrors;
+
+        // Update Score statistic
+        const totalPresses = this.correctButtonPresses + this.wrongButtonPresses;
+        if (totalPresses > 0) {
+            const scorePercentage = Math.round((this.correctButtonPresses / totalPresses) * 100);
+            document.getElementById('score').textContent = scorePercentage + '%';
+        } else {
+            document.getElementById('score').textContent = '0%';
+        }
 
         // Update elapsed time
         if (this.quizStartTime) {
@@ -576,6 +597,9 @@ class MelodicDictation {
             clearInterval(this.statsUpdateInterval);
             this.statsUpdateInterval = null;
         }
+        // Reset Score tracking
+        this.correctButtonPresses = 0;
+        this.wrongButtonPresses = 0;
         this.restart();
     }
 
