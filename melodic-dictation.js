@@ -198,7 +198,7 @@ class MelodicDictation {
         document.getElementById('restartBtn').addEventListener('click', () => this.restart());
     }
     
-    startExercise() {
+    async startExercise() {
         this.currentQuestion = 0;
         this.correctAnswers = 0;
         this.completedMelodies = 0;
@@ -206,6 +206,12 @@ class MelodicDictation {
         this.melodyTimes = [];
         this.quizStartTime = Date.now();
         this.melodyStartTime = Date.now();
+
+        // Ensure audio context is ready and resumed for immediate playback
+        if (this.audioContext && this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+        }
+
         document.getElementById('settingsPanel').style.display = 'none';
         document.getElementById('exerciseArea').classList.add('active');
         document.getElementById('resultsArea').classList.remove('active');
@@ -532,6 +538,9 @@ class MelodicDictation {
             const noteInfo = this.getNoteYPosition(degree);
             const y = noteInfo.y;
 
+            // Shift note to the right if there's an accidental
+            const noteX = noteInfo.accidental ? x + 10 : x;
+
             // Draw accidental if needed
             if (noteInfo.accidental) {
                 const accidental = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -546,7 +555,7 @@ class MelodicDictation {
 
             // Draw note head (filled oval)
             const noteHead = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-            noteHead.setAttribute('cx', x);
+            noteHead.setAttribute('cx', noteX);
             noteHead.setAttribute('cy', y);
             noteHead.setAttribute('rx', 6);
             noteHead.setAttribute('ry', 5);
@@ -555,16 +564,16 @@ class MelodicDictation {
 
             // Draw stem (going up)
             const stem = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            stem.setAttribute('x1', x + 6);
+            stem.setAttribute('x1', noteX + 6);
             stem.setAttribute('y1', y);
-            stem.setAttribute('x2', x + 6);
+            stem.setAttribute('x2', noteX + 6);
             stem.setAttribute('y2', y - 30);
             stem.setAttribute('stroke', 'black');
             stem.setAttribute('stroke-width', '1.5');
             notesGroup.appendChild(stem);
 
             // Add ledger lines if needed
-            this.addLedgerLines(notesGroup, x, y);
+            this.addLedgerLines(notesGroup, noteX, y);
         });
     }
 
@@ -899,7 +908,14 @@ class MelodicDictation {
     async playNote(scaleDegree, duration = 0.5, startTime = null) {
         if (!this.audioContext) return;
 
-        const now = startTime || this.audioContext.currentTime;
+        // Resume audio context if suspended (removes delay on first play)
+        if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+        }
+
+        // For immediate playback (button press), use current time with minimal buffer
+        // For scheduled playback (melodies), use the provided startTime
+        const now = startTime !== null ? startTime : this.audioContext.currentTime;
 
         // Use soundfont instrument if loaded
         if (this.instrument) {
