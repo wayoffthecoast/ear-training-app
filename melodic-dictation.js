@@ -18,6 +18,8 @@ class MelodicDictation {
         this.correctAnswers = 0;
         this.isPlaying = false;
         this.playbackSpeed = 1.0;
+        this.isInitialCadence = false; // Track if this is the first cadence play for auto-melody
+        this.incorrectButtons = new Set(); // Track buttons that have been marked as incorrect
 
         // Note frequencies (C4 = middle C)
         this.baseFrequencies = {
@@ -147,6 +149,7 @@ class MelodicDictation {
         document.getElementById('playMelodyBtn').addEventListener('click', () => this.playMelody());
         document.getElementById('submitBtn').addEventListener('click', () => this.submitAnswer());
         document.getElementById('clearBtn').addEventListener('click', () => this.clearAnswer());
+        document.getElementById('hearNextBtn').addEventListener('click', () => this.moveToNextQuestion());
         document.getElementById('restartBtn').addEventListener('click', () => this.restart());
     }
     
@@ -162,7 +165,9 @@ class MelodicDictation {
     nextQuestion() {
         this.currentQuestion++;
         this.userAnswer = [];
-        
+        this.incorrectButtons.clear(); // Reset incorrect buttons tracking
+        this.isInitialCadence = true; // Mark that this is the initial cadence
+
         // Update UI
         document.getElementById('currentQ').textContent = this.currentQuestion;
         document.getElementById('totalQ').textContent = this.numQuestions;
@@ -170,16 +175,20 @@ class MelodicDictation {
         document.getElementById('totalScore').textContent = this.currentQuestion - 1;
         document.getElementById('feedback').style.display = 'none';
         document.getElementById('feedback').className = 'feedback';
-        
+
+        // Hide "Hear Next" button and show Clear button
+        document.getElementById('hearNextBtn').style.display = 'none';
+        document.getElementById('clearBtn').style.display = 'block';
+
         // Generate new melody
         this.generateMelody();
-        
+
         // Setup answer slots
         this.setupAnswerSlots();
-        
+
         // Setup scale degree buttons
         this.setupScaleDegreeButtons();
-        
+
         // Automatically play chord progression
         setTimeout(() => this.playChordProgression(), 500);
     }
@@ -242,6 +251,7 @@ class MelodicDictation {
         for (let i = 1; i <= 12; i++) {
             const btn = document.createElement('button');
             btn.className = 'degree-btn';
+            btn.id = `degree-btn-${i}`;
             btn.innerHTML = `
                 <span class="note-name">${noteNames[i-1]}</span>
                 <span class="degree-number">(${i})</span>
@@ -253,16 +263,33 @@ class MelodicDictation {
     
     selectDegree(degree) {
         if (this.userAnswer.length < this.melodyLength) {
-            this.userAnswer.push(degree);
-            this.updateAnswerSlots();
-            
-            // Enable submit button when all slots filled
-            if (this.userAnswer.length === this.melodyLength) {
-                document.getElementById('submitBtn').disabled = false;
-            }
+            const currentPosition = this.userAnswer.length;
+            const correctDegree = this.currentMelody[currentPosition];
 
-            // Play note feedback (apply speed)
-            this.playNote(degree, 0.3 / this.playbackSpeed);
+            // Check if the selected degree is correct for this position
+            if (degree === correctDegree) {
+                // Correct note selected
+                this.userAnswer.push(degree);
+                this.updateAnswerSlots();
+
+                // Play note feedback (apply speed)
+                this.playNote(degree, 0.3 / this.playbackSpeed);
+
+                // Check if the entire sequence is complete and correct
+                if (this.userAnswer.length === this.melodyLength) {
+                    // All notes are correct! Show "Hear Next" button
+                    this.onCorrectSequence();
+                }
+            } else {
+                // Wrong note selected
+                const btn = document.getElementById(`degree-btn-${degree}`);
+                btn.classList.add('incorrect');
+                btn.disabled = true;
+                this.incorrectButtons.add(degree);
+
+                // Still play the note so user can hear what they selected
+                this.playNote(degree, 0.3 / this.playbackSpeed);
+            }
         }
     }
     
@@ -289,14 +316,62 @@ class MelodicDictation {
         this.userAnswer = [];
         this.updateAnswerSlots();
         document.getElementById('submitBtn').disabled = true;
-        
+
         // Remove feedback
         document.getElementById('feedback').style.display = 'none';
-        
+
         // Reset slot classes
         for (let i = 0; i < this.melodyLength; i++) {
             const slot = document.getElementById(`slot-${i}`);
             slot.className = 'answer-slot';
+        }
+
+        // Re-enable all buttons that were marked as incorrect
+        this.incorrectButtons.forEach(degree => {
+            const btn = document.getElementById(`degree-btn-${degree}`);
+            if (btn) {
+                btn.classList.remove('incorrect');
+                btn.disabled = false;
+            }
+        });
+        this.incorrectButtons.clear();
+    }
+
+    onCorrectSequence() {
+        // Mark all answer slots as correct
+        for (let i = 0; i < this.melodyLength; i++) {
+            const slot = document.getElementById(`slot-${i}`);
+            slot.classList.add('correct');
+        }
+
+        // Update score
+        this.correctAnswers++;
+        document.getElementById('score').textContent = this.correctAnswers;
+        document.getElementById('totalScore').textContent = this.currentQuestion;
+
+        // Show success feedback
+        const feedback = document.getElementById('feedback');
+        feedback.className = 'feedback correct';
+        feedback.textContent = '✓ Correct! Great job!';
+
+        // Hide Clear button and show "Hear Next" button
+        document.getElementById('clearBtn').style.display = 'none';
+        document.getElementById('hearNextBtn').style.display = 'block';
+
+        // Disable all degree buttons
+        const degreeButtons = document.querySelectorAll('.degree-btn');
+        degreeButtons.forEach(btn => btn.disabled = true);
+    }
+
+    moveToNextQuestion() {
+        // Move to next question or show results
+        if (this.currentQuestion < this.numQuestions) {
+            // Re-enable all buttons before moving to next question
+            const degreeButtons = document.querySelectorAll('.degree-btn');
+            degreeButtons.forEach(btn => btn.disabled = false);
+            this.nextQuestion();
+        } else {
+            this.showResults();
         }
     }
     
@@ -487,22 +562,34 @@ class MelodicDictation {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
 
+        // Store whether this is the initial cadence before any async operations
+        const shouldAutoPlayMelody = this.isInitialCadence;
+        this.isInitialCadence = false; // Reset the flag
+
         // Schedule notes slightly in the future to avoid timing issues
         const now = this.audioContext.currentTime + 0.05;
         const chordDuration = 0.8 / this.playbackSpeed;
         const gap = 0.1 / this.playbackSpeed;
+        let totalDuration = 0;
 
         if (this.cadenceType === 'none') {
-            // No cadence - just mark as not playing
+            // No cadence - just mark as not playing and auto-play melody immediately
             this.isPlaying = false;
+            if (shouldAutoPlayMelody) {
+                setTimeout(() => this.playMelody(), 1000);
+            }
             return;
         } else if (this.cadenceType === 'root') {
             // Play just the root note
             await this.playNote(1, chordDuration * 2, now);
             // Total duration = buffer + chord duration + small safety margin
-            const totalDuration = (0.05 + chordDuration * 2 + 0.05) * 1000;
+            totalDuration = (0.05 + chordDuration * 2 + 0.05) * 1000;
             setTimeout(() => {
                 this.isPlaying = false;
+                // Auto-play melody 1 second after cadence finishes if this was the initial cadence
+                if (shouldAutoPlayMelody) {
+                    setTimeout(() => this.playMelody(), 1000);
+                }
             }, totalDuration);
         } else if (this.cadenceType === 'i-iv-v') {
             // I - IV - V - I progression
@@ -530,9 +617,13 @@ class MelodicDictation {
 
             // Total duration = buffer + (3 gaps + 4 chords) + safety margin
             // Last chord starts at 3*(chordDuration+gap) and plays for chordDuration
-            const totalDuration = (0.05 + 3 * (chordDuration + gap) + chordDuration + 0.05) * 1000;
+            totalDuration = (0.05 + 3 * (chordDuration + gap) + chordDuration + 0.05) * 1000;
             setTimeout(() => {
                 this.isPlaying = false;
+                // Auto-play melody 1 second after cadence finishes if this was the initial cadence
+                if (shouldAutoPlayMelody) {
+                    setTimeout(() => this.playMelody(), 1000);
+                }
             }, totalDuration);
         }
     }

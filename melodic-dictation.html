@@ -309,6 +309,16 @@
             transform: none;
         }
 
+        .degree-btn.incorrect {
+            background: #ffcdd2;
+            border-color: #f44336;
+            color: #c62828;
+        }
+
+        .degree-btn.incorrect:disabled {
+            opacity: 1;
+        }
+
         .submit-area {
             display: flex;
             gap: 10px;
@@ -524,7 +534,8 @@
 
                 <div class="submit-area">
                     <button id="clearBtn" class="btn" style="background: #f44336;">Clear</button>
-                    <button id="submitBtn" class="btn" disabled>Submit Answer</button>
+                    <button id="submitBtn" class="btn" disabled style="display: none;">Submit Answer</button>
+                    <button id="hearNextBtn" class="btn" style="display: none; background: #4caf50;">Hear Next</button>
                 </div>
             </div>
 
