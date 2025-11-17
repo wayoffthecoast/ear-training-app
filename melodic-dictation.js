@@ -410,7 +410,8 @@ class MelodicDictation {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
 
-        const now = this.audioContext.currentTime;
+        // Schedule notes slightly in the future to avoid timing issues
+        const now = this.audioContext.currentTime + 0.05;
         const chordDuration = 0.8 / this.playbackSpeed;
         const gap = 0.1 / this.playbackSpeed;
 
@@ -421,9 +422,11 @@ class MelodicDictation {
         } else if (this.cadenceType === 'root') {
             // Play just the root note
             await this.playNote(1, chordDuration * 2, now);
+            // Total duration = buffer + chord duration + small safety margin
+            const totalDuration = (0.05 + chordDuration * 2 + 0.05) * 1000;
             setTimeout(() => {
                 this.isPlaying = false;
-            }, (chordDuration * 2) * 1000);
+            }, totalDuration);
         } else if (this.cadenceType === 'i-iv-v') {
             // I - IV - V - I progression
             const isMinor = this.isMinorKey();
@@ -448,21 +451,25 @@ class MelodicDictation {
                 await this.playChord([1, 5, 8], chordDuration, now + 3 * (chordDuration + gap)); // I chord
             }
 
+            // Total duration = buffer + (3 gaps + 4 chords) + safety margin
+            // Last chord starts at 3*(chordDuration+gap) and plays for chordDuration
+            const totalDuration = (0.05 + 3 * (chordDuration + gap) + chordDuration + 0.05) * 1000;
             setTimeout(() => {
                 this.isPlaying = false;
-            }, 4 * (chordDuration + gap) * 1000);
+            }, totalDuration);
         }
     }
     
     async playMelody() {
         if (this.isPlaying) return;
         this.isPlaying = true;
-        
+
         if (!this.audioContext) {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
-        
-        const now = this.audioContext.currentTime;
+
+        // Schedule notes slightly in the future to avoid timing issues
+        const now = this.audioContext.currentTime + 0.05;
         const noteDuration = 0.5 / this.playbackSpeed;
         const gap = 0.1 / this.playbackSpeed;
 
@@ -470,10 +477,12 @@ class MelodicDictation {
             const startTime = now + index * (noteDuration + gap);
             this.playNote(degree, noteDuration, startTime);
         });
-        
+
+        // Total duration = buffer + (melody notes with gaps) + last note duration + safety margin
+        const totalDuration = (0.05 + (this.currentMelody.length - 1) * (noteDuration + gap) + noteDuration + 0.05) * 1000;
         setTimeout(() => {
             this.isPlaying = false;
-        }, this.currentMelody.length * (noteDuration + gap) * 1000);
+        }, totalDuration);
     }
 }
 
