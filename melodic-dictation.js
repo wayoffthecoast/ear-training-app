@@ -529,7 +529,20 @@ class MelodicDictation {
         // Draw notes on staff
         this.correctNotesOnStaff.forEach((degree, index) => {
             const x = staffStart + noteSpacing * (index + 1);
-            const y = this.getNoteYPosition(degree);
+            const noteInfo = this.getNoteYPosition(degree);
+            const y = noteInfo.y;
+
+            // Draw accidental if needed
+            if (noteInfo.accidental) {
+                const accidental = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                accidental.setAttribute('x', x - 12);
+                accidental.setAttribute('y', y + 5);
+                accidental.setAttribute('font-size', '20');
+                accidental.setAttribute('font-family', 'serif');
+                accidental.setAttribute('fill', 'black');
+                accidental.textContent = noteInfo.accidental;
+                notesGroup.appendChild(accidental);
+            }
 
             // Draw note head (filled oval)
             const noteHead = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
@@ -601,36 +614,92 @@ class MelodicDictation {
     }
 
     getNoteYPosition(degree) {
-        // Map chromatic degrees to staff positions
-        // Using treble clef: staff lines from bottom are E4, G4, B4, D5, F5
-        // Middle line is B4
-        // We'll map degrees to positions relative to C major for simplicity
-        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-        const rootKey = this.getRootKey();
-        const rootIndex = noteNames.indexOf(rootKey);
+        // Get the actual note name for this degree in the current key
+        const noteName = this.keySignatures[this.currentKey][degree - 1];
 
-        // Calculate the chromatic note
-        const chromaticIndex = (rootIndex + (degree - 1)) % 12;
-        const noteName = noteNames[chromaticIndex];
+        // Parse the note to get the base letter and accidental
+        const parsed = this.parseNoteName(noteName);
+        const baseLetter = parsed.letter;
+        const accidentalSymbol = parsed.accidental;
 
-        // Map note names to Y positions on treble clef (C4 to C6)
-        // Staff line spacing is 10 pixels
+        // Map base letter names to Y positions on treble clef (C4 to B4)
+        // Staff line spacing is approximately 5 pixels between lines
         const positions = {
-            'C': 90,   // C4 (below staff)
-            'C#': 90,
-            'D': 85,   // D4 (below staff)
-            'D#': 85,
+            'C': 90,   // C4 (below staff, needs ledger line)
+            'D': 85,   // D4 (below staff, needs ledger line)
             'E': 80,   // E4 (bottom line)
-            'F': 75,   // F4 (between bottom and 2nd line)
-            'F#': 75,
+            'F': 75,   // F4 (space between bottom and 2nd line)
             'G': 70,   // G4 (2nd line from bottom)
-            'G#': 70,
-            'A': 65,   // A4 (between 2nd and 3rd line)
-            'A#': 65,
+            'A': 65,   // A4 (space between 2nd and 3rd line)
             'B': 60    // B4 (middle line)
         };
 
-        return positions[noteName] || 60;
+        const y = positions[baseLetter] || 60;
+
+        // Determine if we need to display an accidental
+        // An accidental is needed if the note is not in the key signature
+        const accidentalToDisplay = this.shouldDisplayAccidental(noteName, baseLetter);
+
+        return {
+            y: y,
+            accidental: accidentalToDisplay
+        };
+    }
+
+    parseNoteName(noteName) {
+        // Parse note name like "C#", "Db", "C", "Cb" into letter and accidental
+        const letter = noteName[0];
+        let accidental = '';
+
+        if (noteName.length > 1) {
+            if (noteName[1] === 'b') {
+                accidental = 'b';
+            } else if (noteName[1] === '#') {
+                accidental = '#';
+            }
+        }
+
+        return { letter, accidental };
+    }
+
+    shouldDisplayAccidental(noteName, baseLetter) {
+        // Get the key signature data
+        const keyData = this.keySignatureAccidentals[this.currentKey];
+
+        // Parse the note to get its accidental
+        const parsed = this.parseNoteName(noteName);
+        const noteAccidental = parsed.accidental;
+
+        // Determine what accidental (if any) is in the key signature for this base letter
+        let keySignatureAccidental = '';
+        if (keyData && keyData.accidentals) {
+            const accInKey = keyData.accidentals.find(acc => acc.note === baseLetter);
+            if (accInKey) {
+                keySignatureAccidental = keyData.type === 'sharp' ? '#' : 'b';
+            }
+        }
+
+        // If the note's accidental matches the key signature, don't display it
+        if (noteAccidental === keySignatureAccidental) {
+            return null;
+        }
+
+        // If the note has an accidental but key signature doesn't, display it
+        if (noteAccidental && !keySignatureAccidental) {
+            return noteAccidental === '#' ? '♯' : '♭';
+        }
+
+        // If the key signature has an accidental but the note doesn't, display natural
+        if (!noteAccidental && keySignatureAccidental) {
+            return '♮';
+        }
+
+        // If both have accidentals but they're different, display the note's accidental
+        if (noteAccidental && keySignatureAccidental && noteAccidental !== keySignatureAccidental) {
+            return noteAccidental === '#' ? '♯' : '♭';
+        }
+
+        return null;
     }
 
     addLedgerLines(parent, x, y) {
