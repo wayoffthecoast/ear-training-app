@@ -10,7 +10,7 @@ class MelodicDictation {
         this.isLoadingInstrument = false;
         this.cadenceType = 'i-iv-v'; // Default cadence
         this.melodyLength = 4;
-        this.numQuestions = 10;
+        this.numQuestions = 100;
         this.maxInterval = 12; // Default to 12 semitones (octave)
         this.currentMelody = [];
         this.userAnswer = [];
@@ -179,7 +179,7 @@ class MelodicDictation {
             this.maxInterval = e.target.value === 'unlimited' ? Infinity : parseInt(e.target.value);
         });
         document.getElementById('numQuestions').addEventListener('change', (e) => {
-            this.numQuestions = parseInt(e.target.value);
+            this.numQuestions = e.target.value === 'unlimited' ? Infinity : parseInt(e.target.value);
         });
         document.getElementById('speedSlider').addEventListener('input', (e) => {
             this.playbackSpeed = parseFloat(e.target.value);
@@ -229,7 +229,7 @@ class MelodicDictation {
 
         // Update UI
         document.getElementById('currentQ').textContent = this.currentQuestion;
-        document.getElementById('totalQ').textContent = this.numQuestions;
+        document.getElementById('totalQ').textContent = this.numQuestions === Infinity ? '∞' : this.numQuestions;
         document.getElementById('feedback').style.display = 'none';
         document.getElementById('feedback').className = 'feedback';
 
