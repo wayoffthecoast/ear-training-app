@@ -49,6 +49,9 @@ class MelodicDictation {
         // Chromatic scale intervals (all 12 semitones from root)
         this.chromaticIntervals = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
+        // Scale degree names for display
+        this.scaleDegreeNames = ['1', '#1 / b2', '2', '#2 / b3', '3', '4', '#4 / b5', '5', '#5 / b6', '6', '#6 / b7', '7'];
+
         // Note names for each key (all 12 chromatic notes with enharmonic spellings)
         this.keySignatures = {
             'C': ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'],
@@ -320,7 +323,7 @@ class MelodicDictation {
             btn.id = `degree-btn-${i}`;
             btn.innerHTML = `
                 <span class="note-name">${noteNames[i-1]}</span>
-                <span class="degree-number">(${i})</span>
+                <span class="degree-number">(${this.scaleDegreeNames[i-1]})</span>
             `;
             btn.addEventListener('click', () => this.selectDegree(i));
             container.appendChild(btn);
@@ -391,14 +394,14 @@ class MelodicDictation {
     
     updateAnswerSlots() {
         const noteNames = this.keySignatures[this.currentKey];
-        
+
         for (let i = 0; i < this.melodyLength; i++) {
             const slot = document.getElementById(`slot-${i}`);
             if (i < this.userAnswer.length) {
                 const degree = this.userAnswer[i];
                 slot.innerHTML = `
                     <span class="note-name">${noteNames[degree-1]}</span>
-                    <span class="scale-degree">(${degree})</span>
+                    <span class="scale-degree">(${this.scaleDegreeNames[degree-1]})</span>
                 `;
                 slot.classList.add('filled');
             } else {
@@ -790,12 +793,12 @@ class MelodicDictation {
                 } else {
                     slot.classList.add('incorrect');
                     const correctNote = noteNames[this.currentMelody[i]-1];
-                    slot.innerHTML += `<div class="correct-answer">✓ ${correctNote} (${this.currentMelody[i]})</div>`;
+                    slot.innerHTML += `<div class="correct-answer">✓ ${correctNote} (${this.scaleDegreeNames[this.currentMelody[i]-1]})</div>`;
                 }
             }
-            
-            feedback.innerHTML += `Correct answer: ${this.currentMelody.map((d, i) => 
-                `${noteNames[d-1]} (${d})`).join(', ')}`;
+
+            feedback.innerHTML += `Correct answer: ${this.currentMelody.map((d, i) =>
+                `${noteNames[d-1]} (${this.scaleDegreeNames[d-1]})`).join(', ')}`;
         }
         
         // Update score
