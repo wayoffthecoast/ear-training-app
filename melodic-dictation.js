@@ -169,9 +169,11 @@ class MelodicDictation {
         });
         document.getElementById('keySelect').addEventListener('change', (e) => {
             this.currentKey = e.target.value;
-            // Update key signature if exercise is active
+            // Update key signature and note buttons if exercise is active
             if (document.getElementById('exerciseArea').classList.contains('active')) {
                 this.updateKeySignature();
+                this.setupScaleDegreeButtons();
+                this.updateAnswerSlots(); // Update answer slots to show correct note names
             }
         });
         document.getElementById('cadenceSelect').addEventListener('change', (e) => {
