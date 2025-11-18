@@ -3,7 +3,8 @@
 
 class MelodicDictation {
     constructor() {
-        this.audioContext = null;
+        // Initialize AudioContext immediately for minimal latency
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.currentKey = 'Bb';
         this.currentInstrument = 'acoustic_grand_piano';
         this.instrument = null; // Will hold the loaded soundfont instrument
@@ -29,6 +30,9 @@ class MelodicDictation {
         this.correctNotesOnStaff = []; // Track notes to display on staff
         this.correctButtonPresses = 0; // Track number of correct button presses
         this.wrongButtonPresses = 0; // Track number of wrong button presses
+
+        // Pre-load instrument immediately for minimal latency
+        this.loadInstrument(this.currentInstrument);
 
         // Note frequencies (C4 = middle C)
         this.baseFrequencies = {
@@ -120,15 +124,6 @@ class MelodicDictation {
     }
     
     init() {
-        // Initialize audio context on user interaction
-        document.addEventListener('click', () => {
-            if (!this.audioContext) {
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                // Load the initial instrument
-                this.loadInstrument(this.currentInstrument);
-            }
-        }, { once: true });
-
         // Load saved speed from localStorage
         const savedSpeed = localStorage.getItem('playbackSpeed');
         if (savedSpeed) {
@@ -138,6 +133,13 @@ class MelodicDictation {
         }
 
         this.setupEventListeners();
+
+        // Resume AudioContext on first user interaction (required by browser autoplay policies)
+        document.addEventListener('click', () => {
+            if (this.audioContext && this.audioContext.state === 'suspended') {
+                this.audioContext.resume();
+            }
+        }, { once: true });
     }
 
     async loadInstrument(instrumentName) {
@@ -147,12 +149,31 @@ class MelodicDictation {
         console.log(`Loading instrument: ${instrumentName}`);
 
         try {
-            // Load the soundfont instrument
+            // Load the soundfont instrument with optimized settings
             this.instrument = await Soundfont.instrument(this.audioContext, instrumentName, {
                 soundfont: 'MusyngKite',
-                gain: 3.0 // Increase volume
+                gain: 3.0, // Increase volume
+                destination: this.audioContext.destination,
+                // Use direct destination for lower latency
+                attack: 0,
+                release: 0.1
             });
             console.log(`Instrument ${instrumentName} loaded successfully`);
+
+            // Preload a few common notes to ensure they're cached
+            // This helps reduce latency on first play
+            if (this.instrument.schedule) {
+                const time = this.audioContext.currentTime;
+                [60, 62, 64, 65, 67, 69, 71, 72].forEach(midiNote => {
+                    // Schedule a silent note to preload the sample
+                    this.instrument.schedule(time, [{
+                        note: midiNote,
+                        time: time,
+                        duration: 0.01,
+                        gain: 0.001
+                    }]);
+                });
+            }
         } catch (error) {
             console.error(`Error loading instrument ${instrumentName}:`, error);
             this.instrument = null;
@@ -357,8 +378,8 @@ class MelodicDictation {
                 this.updateAnswerSlots();
                 this.updateStaffDisplay();
 
-                // Play note feedback (apply speed)
-                this.playNote(degree, 0.3 / this.playbackSpeed);
+                // Play note feedback with immediate playback for minimal latency
+                this.playNote(degree, 0.3 / this.playbackSpeed, null, true);
 
                 // Check if the entire sequence is complete and correct
                 if (this.userAnswer.length === this.melodyLength) {
@@ -387,8 +408,8 @@ class MelodicDictation {
                 this.wrongButtonPresses++;
                 this.updateStatistics();
 
-                // Still play the note so user can hear what they selected
-                this.playNote(degree, 0.3 / this.playbackSpeed);
+                // Play note with immediate playback for minimal latency
+                this.playNote(degree, 0.3 / this.playbackSpeed, null, true);
             }
         }
     }
@@ -896,10 +917,22 @@ class MelodicDictation {
         return rootMidi + semitones + (octaveOffset + autoOctaveOffset) * 12;
     }
     
-    async playNote(scaleDegree, duration = 0.5, startTime = null) {
+    async playNote(scaleDegree, duration = 0.5, startTime = null, immediate = false) {
         if (!this.audioContext) return;
 
-        const now = startTime || this.audioContext.currentTime;
+        // Resume AudioContext if suspended (browser autoplay policy)
+        if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+        }
+
+        // For immediate playback (button presses), use minimal latency
+        // For scheduled playback (sequences), use provided startTime or small buffer
+        let now;
+        if (immediate) {
+            now = this.audioContext.currentTime;
+        } else {
+            now = startTime || this.audioContext.currentTime + 0.05;
+        }
 
         // Use soundfont instrument if loaded
         if (this.instrument) {
@@ -951,6 +984,11 @@ class MelodicDictation {
 
         if (!this.audioContext) {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        // Resume AudioContext if suspended
+        if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
         }
 
         // Store whether this is the initial cadence before any async operations
@@ -1025,6 +1063,11 @@ class MelodicDictation {
 
         if (!this.audioContext) {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        // Resume AudioContext if suspended
+        if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
         }
 
         // Schedule notes slightly in the future to avoid timing issues
