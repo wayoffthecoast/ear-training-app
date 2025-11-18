@@ -37,15 +37,20 @@ class MelodicDictation {
         // Note frequencies (C4 = middle C)
         this.baseFrequencies = {
             'C': 261.63,
+            'C#': 277.18,
             'Db': 277.18,
             'D': 293.66,
+            'D#': 311.13,
             'Eb': 311.13,
             'E': 329.63,
             'F': 349.23,
+            'F#': 369.99,
             'Gb': 369.99,
             'G': 392.00,
+            'G#': 415.30,
             'Ab': 415.30,
             'A': 440.00,
+            'A#': 466.16,
             'Bb': 466.16,
             'B': 493.88
         };
@@ -59,28 +64,38 @@ class MelodicDictation {
         // Note names for each key (all 12 chromatic notes with enharmonic spellings)
         this.keySignatures = {
             'C': ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'],
+            'C#': ['C#', 'D', 'D#', 'E', 'E#', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'B#'],
             'Db': ['Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B', 'C'],
             'D': ['D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'C', 'C#'],
+            'D#': ['D#', 'E', 'E#', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'B#', 'C#', 'D'],
             'Eb': ['Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B', 'C', 'Db', 'D'],
             'E': ['E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#'],
             'F': ['F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E'],
+            'F#': ['F#', 'G', 'G#', 'A', 'A#', 'B', 'B#', 'C#', 'D', 'D#', 'E', 'E#'],
             'Gb': ['Gb', 'G', 'Ab', 'A', 'Bb', 'Cb', 'C', 'Db', 'D', 'Eb', 'E', 'F'],
             'G': ['G', 'G#', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#'],
+            'G#': ['G#', 'A', 'A#', 'B', 'B#', 'C#', 'D', 'D#', 'E', 'E#', 'F#', 'G'],
             'Ab': ['Ab', 'A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G'],
             'A': ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'],
+            'A#': ['A#', 'B', 'B#', 'C#', 'D', 'D#', 'E', 'E#', 'F#', 'G', 'G#', 'A'],
             'Bb': ['Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A'],
             'B': ['B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#'],
             // Minor keys
             'Cm': ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'],
+            'C#m': ['C#', 'D', 'D#', 'E', 'E#', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'C'],
             'Dbm': ['Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'Cb', 'C'],
             'Dm': ['D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B', 'C', 'C#'],
+            'D#m': ['D#', 'E', 'E#', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'C', 'C#', 'D'],
             'Ebm': ['Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'Cb', 'C', 'Db', 'D'],
             'Em': ['E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B', 'C', 'C#', 'D', 'D#'],
             'Fm': ['F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'Cb', 'C', 'Db', 'D', 'Eb', 'E'],
+            'F#m': ['F#', 'G', 'G#', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F'],
             'Gbm': ['Gb', 'G', 'Ab', 'A', 'Bb', 'Cb', 'C', 'Db', 'D', 'Eb', 'Fb', 'F'],
             'Gm': ['G', 'Ab', 'A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'F#'],
+            'G#m': ['G#', 'A', 'A#', 'B', 'B#', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G'],
             'Abm': ['Ab', 'A', 'Bb', 'Cb', 'C', 'Db', 'D', 'Eb', 'Fb', 'F', 'Gb', 'G'],
             'Am': ['A', 'Bb', 'B', 'C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#'],
+            'A#m': ['A#', 'B', 'B#', 'C#', 'D', 'D#', 'E', 'E#', 'F#', 'G', 'G#', 'A'],
             'Bbm': ['Bb', 'Cb', 'C', 'Db', 'D', 'Eb', 'Fb', 'F', 'Gb', 'G', 'Ab', 'A'],
             'Bm': ['B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#']
         };
@@ -98,6 +113,11 @@ class MelodicDictation {
             'A': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }] }, // G# above staff
             'E': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }, { note: 'D', y: 50 }] }, // D# on 4th line
             'B': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }, { note: 'D', y: 50 }, { note: 'A', y: 65 }] }, // A# space
+            'F#': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }, { note: 'D', y: 50 }, { note: 'A', y: 65 }, { note: 'E', y: 45 }] }, // 6 sharps
+            'C#': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }, { note: 'D', y: 50 }, { note: 'A', y: 65 }, { note: 'E', y: 45 }, { note: 'B', y: 60 }] }, // 7 sharps
+            'G#': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }, { note: 'D', y: 50 }, { note: 'A', y: 65 }, { note: 'E', y: 45 }, { note: 'B', y: 60 }, { note: 'F', y: 75 }] }, // 8 sharps
+            'D#': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }, { note: 'D', y: 50 }, { note: 'A', y: 65 }, { note: 'E', y: 45 }, { note: 'B', y: 60 }, { note: 'F', y: 75 }, { note: 'C', y: 85 }] }, // 9 sharps
+            'A#': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }, { note: 'D', y: 50 }, { note: 'A', y: 65 }, { note: 'E', y: 45 }, { note: 'B', y: 60 }, { note: 'F', y: 75 }, { note: 'C', y: 85 }, { note: 'G', y: 90 }] }, // 10 sharps
             // Major flat keys (B E A D G C F pattern)
             'F': { type: 'flat', accidentals: [{ note: 'B', y: 60 }] }, // Bb on middle line
             'Bb': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }] }, // Eb on space
@@ -109,8 +129,13 @@ class MelodicDictation {
             'Am': { type: 'none', accidentals: [] },
             'Em': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }] }, // 1 sharp
             'Bm': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }] }, // 2 sharps
+            'F#m': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }] }, // 3 sharps
             'Gbm': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }] }, // 3 sharps (F#m)
-            'Dbm': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }, { note: 'D', y: 50 }, { note: 'A', y: 65 }] }, // 5 sharps (C#m)
+            'C#m': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }, { note: 'D', y: 50 }] }, // 4 sharps
+            'Dbm': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }, { note: 'D', y: 50 }, { note: 'A', y: 65 }] }, // 5 sharps (C#m enharmonic, but uses Dbm spelling)
+            'G#m': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }, { note: 'D', y: 50 }, { note: 'A', y: 65 }] }, // 5 sharps
+            'D#m': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }, { note: 'D', y: 50 }, { note: 'A', y: 65 }, { note: 'E', y: 45 }] }, // 6 sharps
+            'A#m': { type: 'sharp', accidentals: [{ note: 'F', y: 40 }, { note: 'C', y: 55 }, { note: 'G', y: 35 }, { note: 'D', y: 50 }, { note: 'A', y: 65 }, { note: 'E', y: 45 }, { note: 'B', y: 60 }] }, // 7 sharps
             'Dm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }] }, // 1 flat
             'Gm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }] }, // 2 flats
             'Cm': { type: 'flat', accidentals: [{ note: 'B', y: 60 }, { note: 'E', y: 45 }, { note: 'A', y: 65 }] }, // 3 flats
@@ -891,15 +916,20 @@ class MelodicDictation {
         // MIDI note numbers: C4 = 60, which is middle C
         const rootMidiNotes = {
             'C': 60,
+            'C#': 61,
             'Db': 61,
             'D': 62,
+            'D#': 63,
             'Eb': 63,
             'E': 64,
             'F': 65,
+            'F#': 66,
             'Gb': 66,
             'G': 67,
+            'G#': 68,
             'Ab': 68,
             'A': 69,
+            'A#': 70,
             'Bb': 70,
             'B': 71
         };
