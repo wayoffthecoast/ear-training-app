@@ -85,6 +85,31 @@ class MelodicDictation {
             'Bm': ['B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#']
         };
 
+        // Enharmonic equivalent mappings
+        this.enharmonicEquivalents = {
+            'C': null,      // No common enharmonic
+            'C#': 'Db',
+            'Db': 'C#',
+            'D': null,      // No common enharmonic
+            'D#': 'Eb',
+            'Eb': 'D#',
+            'E': null,      // No common enharmonic (Fb is rare)
+            'F': null,      // No common enharmonic (E# is rare)
+            'F#': 'Gb',
+            'Gb': 'F#',
+            'G': null,      // No common enharmonic
+            'G#': 'Ab',
+            'Ab': 'G#',
+            'A': null,      // No common enharmonic
+            'A#': 'Bb',
+            'Bb': 'A#',
+            'B': null,      // No common enharmonic (Cb is rare)
+            'Cb': 'B',      // Handle rare enharmonics
+            'B#': 'C',
+            'Fb': 'E',
+            'E#': 'F'
+        };
+
         // Key signature accidentals for display on treble clef
         // Format: { type: 'sharp' or 'flat', accidentals: [list of notes with their y-positions] }
         // Sharp keys follow the circle of fifths (F C G D A E B) with ascending/descending pattern
@@ -343,8 +368,18 @@ class MelodicDictation {
             const btn = document.createElement('button');
             btn.className = 'degree-btn';
             btn.id = `degree-btn-${i}`;
+
+            // Get the primary note name for this degree
+            const primaryNote = noteNames[i-1];
+
+            // Get the enharmonic equivalent if it exists
+            const enharmonic = this.enharmonicEquivalents[primaryNote];
+
+            // Format the note name with enharmonic if available
+            const displayNoteName = enharmonic ? `${primaryNote}/${enharmonic}` : primaryNote;
+
             btn.innerHTML = `
-                <span class="note-name">${noteNames[i-1]}</span>
+                <span class="note-name">${displayNoteName}</span>
                 <span class="degree-number">(${this.scaleDegreeNames[i-1]})</span>
             `;
             btn.addEventListener('click', () => this.selectDegree(i));
